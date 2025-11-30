@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resume_constructor_app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      # Add other environment variables here or use env_file
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: resume_constructor_db
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=resume_constructor
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  # Optional: Drizzle Studio for database management
+  studio:
+    image: node:20-alpine
+    container_name: resume_constructor_studio
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: npx drizzle-kit studio
+    ports:
+      - "4983:4983"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+
+  # MinIO for object storage (photos)
+  minio:
+    image: minio/minio:latest
+    container_name: resume_constructor_minio
+    restart: always
+    ports:
+      - "9000:9000"      # API
+      - "9001:9001"      # Console UI
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
