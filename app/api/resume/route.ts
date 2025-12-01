@@ -52,9 +52,11 @@ function formatResumeResponse(
         email: resume.email,
         phone: resume.phone ?? "",
         address: resume.address ?? "",
+        title: resume.professionalTitle ?? "",
+        summary: resume.summary ?? "",
         photo: photoData,
       },
-      summary: resume.summary ?? "",
+      summary: resume.summary ?? "", // Keep for backward compatibility
       selectedTemplate: resume.selectedTemplate,
       designSettings: {
         themeColor: resume.themeColor,
@@ -152,13 +154,18 @@ export async function POST(req: Request) {
   // Extract data from content object
   const { personalInfo, designSettings, summary, selectedTemplate } = content;
 
+  // Resolve fields that can come from multiple places
+  const resolvedSummary = summary ?? personalInfo?.summary ?? null;
+  const resolvedProfessionalTitle = personalInfo?.title ?? null;
+
   // Base resume data (always updated)
   const resumeData = {
     fullName: personalInfo?.fullName ?? "Untitled",
     email: personalInfo?.email ?? "",
     phone: personalInfo?.phone ?? null,
     address: personalInfo?.address ?? null,
-    summary: summary ?? null,
+    professionalTitle: resolvedProfessionalTitle,
+    summary: resolvedSummary,
     selectedTemplate: selectedTemplate ?? "professional",
     themeColor: designSettings?.themeColor ?? "#3b82f6",
     fontFamily: designSettings?.fontFamily ?? "sans",

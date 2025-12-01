@@ -84,6 +84,7 @@ export const resumes = pgTable("resumes", {
   email: text("email").notNull(),
   phone: text("phone"),
   address: text("address"),
+  professionalTitle: text("professional_title"),
 
   // Resume metadata
   title: text("title"),
