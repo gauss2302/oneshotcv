@@ -1,12 +1,16 @@
-import React from 'react';
-import { useCVStore } from '@/store/useCVStore';
-import { Plus, Trash2 } from 'lucide-react';
+import React from "react";
+import { useCVStore } from "@/store/useCVStore";
+import { Plus, Trash2 } from "lucide-react";
 
 export const SkillsForm: React.FC = () => {
-  const { skills, addSkill, removeSkill, updateSkill } = useCVStore();
+  const { skills, addSkill, removeSkill, updateSkill, dataVersion } =
+    useCVStore();
 
   return (
-    <div className="space-y-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+    <div
+      className="space-y-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100"
+      key={dataVersion}
+    >
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-800">Skills</h2>
         <button
@@ -24,16 +28,20 @@ export const SkillsForm: React.FC = () => {
             <div className="flex-1">
               <input
                 value={skill.name}
-                onChange={(e) => updateSkill(skill.id, { name: e.target.value })}
+                onChange={(e) =>
+                  updateSkill(skill.id, { name: e.target.value })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Skill (e.g. React, Python)"
               />
             </div>
-            
+
             <div className="w-24">
               <select
                 value={skill.level}
-                onChange={(e) => updateSkill(skill.id, { level: parseInt(e.target.value) })}
+                onChange={(e) =>
+                  updateSkill(skill.id, { level: parseInt(e.target.value) })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
               >
                 <option value={1}>Beginner</option>

@@ -1,7 +1,10 @@
-export interface Photo {
+export interface PhotoData {
   id: string;
-  url: string; // Public URL to processed image
-  originalUrl?: string; // URL to original (for re-cropping)
+  resumePhotoId?: string;
+  url: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
   cropData?: {
     x: number;
     y: number;
@@ -9,10 +12,6 @@ export interface Photo {
     height: number;
     zoom?: number;
   };
-  fileName: string;
-  fileSize: number;
-  mimeType: string;
-  resumePhotoId?: string; // Resume-specific attachment id
 }
 
 export interface PersonalInfo {
@@ -23,7 +22,7 @@ export interface PersonalInfo {
   summary: string;
   title: string;
   location?: string;
-  photo?: Photo;
+  photo?: PhotoData;
 }
 
 export interface Education {
@@ -32,8 +31,8 @@ export interface Education {
   degree: string;
   startDate: string;
   endDate: string;
-  current: boolean;
   description: string;
+  current?: boolean;
 }
 
 export interface Experience {
@@ -42,21 +41,23 @@ export interface Experience {
   position: string;
   startDate: string;
   endDate: string;
-  current: boolean;
+  location: string;
   description: string;
+  current?: boolean;
+  isCurrent?: boolean;
 }
 
 export interface Skill {
   id: string;
   name: string;
-  level: number; // 1-5 or similar
+  level: number;
 }
 
 export interface CVDesignSettings {
   themeColor: string;
-  fontFamily: 'sans' | 'serif' | 'mono' | 'times';
+  fontFamily: "sans" | "serif" | "mono" | "times";
   scale: number;
-  textAlignment: 'left' | 'center' | 'right' | 'justify';
+  textAlignment: "left" | "center" | "right" | "justify";
   fontSizes: {
     header: number;
     sectionTitle: number;
@@ -75,4 +76,5 @@ export interface CVState {
   experience: Experience[];
   skills: Skill[];
   designSettings: CVDesignSettings;
+  selectedTemplate?: string;
 }

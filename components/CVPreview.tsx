@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useCVStore } from "@/store/useCVStore";
+import { PreviewSkeleton } from "./ui/EditorSkeleton";
 import { getClassicTemplateBlocks } from "./templates/ClassicTemplate";
-// import { getModernTemplateBlocks } from "./templates/ModernTemplate";
 import { getCreativeTemplateBlocks } from "./templates/CreativeTemplate";
 import { getMinimalistTemplateBlocks } from "./templates/MinimalistTemplate";
 import { getProfessionalTemplateBlocks } from "./templates/ProfessionalTemplate";
@@ -17,18 +17,17 @@ import { TemplateBlock } from "./templates/types";
 const A4_WIDTH_MM = 210;
 const A4_HEIGHT_MM = 297;
 const PADDING_MM = 20;
-const PX_PER_MM = 3.78; // Approx 96 DPI
+const PX_PER_MM = 3.78;
 const CONTENT_WIDTH_PX = (A4_WIDTH_MM - 2 * PADDING_MM) * PX_PER_MM;
 const CONTENT_HEIGHT_PX = (A4_HEIGHT_MM - 2 * PADDING_MM) * PX_PER_MM;
 
 const DEFAULT_FONT_SIZES = { header: 2.25, sectionTitle: 1.5, body: 1 };
 const DEFAULT_SPACING = { lineHeight: 1.6, sectionPadding: 2, itemGap: 1 };
 
-// Safe colors to avoid html2canvas lab() errors
 const colors = {
-  textMain: "#111827", // gray-900
-  textSec: "#4b5563", // gray-600
-  textMuted: "#6b7280", // gray-500
+  textMain: "#111827",
+  textSec: "#4b5563",
+  textMuted: "#6b7280",
   bgPage: "#ffffff",
 };
 
@@ -46,8 +45,11 @@ export const CVPreview: React.FC = () => {
     skills,
     selectedTemplate,
     designSettings,
+    isLoading,
+    dataVersion,
   } = useCVStore();
-  const [zoom, setZoom] = useState(0.8); // Default zoom
+
+  const [zoom, setZoom] = useState(0.8);
   const [pages, setPages] = useState<
     { id: string; content: React.ReactNode }[][]
   >([]);
@@ -83,7 +85,6 @@ export const CVPreview: React.FC = () => {
     "--cv-item-gap": `${resolvedSpacing.itemGap}rem`,
   } as React.CSSProperties;
 
-  // We use a key to force re-measurement when data changes
   const dataKey = JSON.stringify({
     personalInfo,
     education,
@@ -91,9 +92,9 @@ export const CVPreview: React.FC = () => {
     skills,
     selectedTemplate,
     designSettings,
+    dataVersion,
   });
 
-  // Get blocks based on template
   const getBlocks = (): TemplateBlock[] => {
     const data = {
       personalInfo,
@@ -103,8 +104,6 @@ export const CVPreview: React.FC = () => {
       designSettings,
     };
     switch (selectedTemplate) {
-      // case "modern":
-      //   return getModernTemplateBlocks(data, designSettings);
       case "creative":
         return getCreativeTemplateBlocks(data, designSettings);
       case "minimalist":
@@ -130,7 +129,7 @@ export const CVPreview: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!measureRef.current) return;
+    if (!measureRef.current || isLoading) return;
 
     const frame = requestAnimationFrame(() => {
       const container = measureRef.current;
@@ -157,11 +156,7 @@ export const CVPreview: React.FC = () => {
             currentHeight = 0;
           }
         }
-
-        currentPage.push({
-          id: block.id,
-          content: block.content,
-        });
+        currentPage.push({ id: block.id, content: block.content });
         currentHeight += block.height;
       });
 
@@ -173,26 +168,25 @@ export const CVPreview: React.FC = () => {
     });
 
     return () => cancelAnimationFrame(frame);
-  }, [dataKey]);
+  }, [dataKey, isLoading]);
 
-  // Helper to render measurement blocks
   const renderMeasurementBlocks = () => {
     const blocks = getBlocks();
-    return (
-      <>
-        {blocks.map((block) => (
-          <div
-            key={block.id}
-            data-id={block.id}
-            className="cv-block"
-            style={{ paddingBottom: resolvedSpacing.sectionPadding + "rem" }}
-          >
-            {block.content}
-          </div>
-        ))}
-      </>
-    );
+    return blocks.map((block) => (
+      <div
+        key={block.id}
+        data-id={block.id}
+        className="cv-block"
+        style={{ paddingBottom: resolvedSpacing.sectionPadding + "rem" }}
+      >
+        {block.content}
+      </div>
+    ));
   };
+
+  if (isLoading) {
+    return <PreviewSkeleton />;
+  }
 
   return (
     <div className="w-full h-full flex flex-col relative">
@@ -210,8 +204,6 @@ export const CVPreview: React.FC = () => {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
           >
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
@@ -231,8 +223,6 @@ export const CVPreview: React.FC = () => {
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
           >
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -271,7 +261,7 @@ export const CVPreview: React.FC = () => {
           {/* Render Pages */}
           {pages.map((pageContent, index) => (
             <div
-              key={index}
+              key={`${dataVersion}-${index}`}
               className="cv-page bg-white shadow-lg box-border mx-auto relative"
               style={{
                 width: "210mm",
@@ -296,7 +286,6 @@ export const CVPreview: React.FC = () => {
                 </div>
               ))}
 
-              {/* Page Number */}
               <div
                 style={{
                   position: "absolute",

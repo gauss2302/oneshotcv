@@ -1,12 +1,15 @@
-import { useEffect, useRef } from 'react';
-import { useCVStore } from '@/store/useCVStore';
-import { authClient } from '@/lib/auth/auth-client';
-import { useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useCallback } from "react";
+import { useCVStore } from "@/store/useCVStore";
+import { authClient } from "@/lib/auth/auth-client";
+import { useSearchParams } from "next/navigation";
+
+const SAVE_DEBOUNCE_MS = 1500;
 
 export function useResumeSync() {
   const { data: session } = authClient.useSession();
   const searchParams = useSearchParams();
-  const resumeId = searchParams.get('resumeId');
+  const resumeId = searchParams.get("resumeId");
+
   const {
     personalInfo,
     education,
@@ -14,29 +17,48 @@ export function useResumeSync() {
     skills,
     selectedTemplate,
     designSettings,
+    hasUnsavedChanges,
     setResume,
     setResumeId,
-    resumeId: storedResumeId
+    resetStore,
+    setIsLoading,
+    setIsSaving,
+    setSaved,
+    resumeId: storedResumeId,
   } = useCVStore();
 
   const isSyncing = useRef(false);
-  const hasLoadedResume = useRef(false);
+  const lastLoadedResumeId = useRef<string | null>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Clear localStorage on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('cv-storage');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cv-storage");
     }
   }, []);
 
+  // Load resume data
   useEffect(() => {
     if (!session?.user) return;
+
+    // Skip if we've already loaded this exact resume
+    if (lastLoadedResumeId.current === resumeId) {
+      return;
+    }
 
     let isCancelled = false;
 
     const loadResume = async () => {
-      hasLoadedResume.current = false;
+      // Set loading state and reset store when switching
+      if (lastLoadedResumeId.current !== null) {
+        resetStore();
+      } else {
+        setIsLoading(true);
+      }
+
       try {
-        const query = resumeId ? `?id=${resumeId}` : '';
+        const query = resumeId ? `?id=${resumeId}` : "";
         const res = await fetch(`/api/resume${query}`);
         const data = await res.json();
 
@@ -45,37 +67,40 @@ export function useResumeSync() {
         if (data.content) {
           setResume(data.content);
           setResumeId(data.id);
+          lastLoadedResumeId.current = data.id;
         } else if (!resumeId) {
+          // Create new resume
           const current = useCVStore.getState();
-          const createRes = await fetch('/api/resume', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const createRes = await fetch("/api/resume", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               content: {
-                personalInfo: current.personalInfo,
+                personalInfo: { ...current.personalInfo, photo: undefined },
                 education: current.education,
                 experience: current.experience,
                 skills: current.skills,
                 selectedTemplate: current.selectedTemplate,
                 designSettings: current.designSettings,
               },
-              createNew: true
-            })
+              createNew: true,
+            }),
           });
           const createData = await createRes.json();
           if (createData.id) {
             setResumeId(createData.id);
+            lastLoadedResumeId.current = createData.id;
           }
         } else {
-          console.warn('Resume not found for id:', resumeId);
+          console.warn("Resume not found for id:", resumeId);
         }
       } catch (error) {
         if (!isCancelled) {
-          console.error(error);
+          console.error("Failed to load resume:", error);
         }
       } finally {
         if (!isCancelled) {
-          hasLoadedResume.current = true;
+          setIsLoading(false);
         }
       }
     };
@@ -85,41 +110,67 @@ export function useResumeSync() {
     return () => {
       isCancelled = true;
     };
-  }, [session, resumeId, setResume, setResumeId]);
+  }, [session, resumeId, setResume, setResumeId, resetStore, setIsLoading]);
 
+  // Auto-save with debounce
   const activeResumeId = resumeId ?? storedResumeId ?? undefined;
 
+  const saveResume = useCallback(async () => {
+    if (!activeResumeId || isSyncing.current) return;
+
+    const state = useCVStore.getState();
+    if (!state.hasUnsavedChanges) return;
+
+    isSyncing.current = true;
+    setIsSaving(true);
+
+    try {
+      const { photo, ...personalInfoWithoutPhoto } = state.personalInfo;
+
+      await fetch("/api/resume", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: activeResumeId,
+          content: {
+            personalInfo: personalInfoWithoutPhoto,
+            education: state.education,
+            experience: state.experience,
+            skills: state.skills,
+            selectedTemplate: state.selectedTemplate,
+            designSettings: state.designSettings,
+          },
+        }),
+      });
+
+      setSaved();
+    } catch (error) {
+      console.error("Failed to save resume:", error);
+    } finally {
+      isSyncing.current = false;
+      setIsSaving(false);
+    }
+  }, [activeResumeId, setIsSaving, setSaved]);
+
+  // Debounced save effect
   useEffect(() => {
-    if (!session?.user || !hasLoadedResume.current || !activeResumeId) return;
+    if (!session?.user || !activeResumeId || !hasUnsavedChanges) return;
 
-    const timeoutId = setTimeout(async () => {
-      if (isSyncing.current) return;
+    // Clear existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
-      isSyncing.current = true;
-      try {
-        await fetch('/api/resume', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: activeResumeId,
-            content: {
-              personalInfo,
-              education,
-              experience,
-              skills,
-              selectedTemplate,
-              designSettings
-            }
-          })
-        });
-      } catch (error) {
-        console.error('Failed to save resume:', error);
-      } finally {
-        isSyncing.current = false;
+    // Set new timeout
+    saveTimeoutRef.current = setTimeout(() => {
+      saveResume();
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
-    }, 2000);
-
-    return () => clearTimeout(timeoutId);
+    };
   }, [
     personalInfo,
     education,
@@ -128,6 +179,17 @@ export function useResumeSync() {
     designSettings,
     selectedTemplate,
     session,
-    activeResumeId
+    activeResumeId,
+    hasUnsavedChanges,
+    saveResume,
   ]);
+
+  // Save on unmount if there are unsaved changes
+  useEffect(() => {
+    return () => {
+      if (useCVStore.getState().hasUnsavedChanges && activeResumeId) {
+        saveResume();
+      }
+    };
+  }, [activeResumeId, saveResume]);
 }

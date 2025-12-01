@@ -3,8 +3,16 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
-import { resumes, education, experience, skills } from "@/db/schema";
+import {
+  resumes,
+  education,
+  experience,
+  skills,
+  resumePhotos,
+  photos,
+} from "@/db/schema";
 import { and, eq } from "drizzle-orm";
+import { getPublicUrl } from "@/lib/minio";
 
 // Helper: Convert DB record to API response format
 function formatResumeResponse(
@@ -12,8 +20,29 @@ function formatResumeResponse(
     education?: (typeof education.$inferSelect)[];
     experience?: (typeof experience.$inferSelect)[];
     skills?: (typeof skills.$inferSelect)[];
+    resumePhoto?:
+      | (typeof resumePhotos.$inferSelect & {
+          photo?: typeof photos.$inferSelect;
+        })
+      | null;
   }
 ) {
+  // Build photo object if exists
+  let photoData = undefined;
+  if (resume.resumePhoto && resume.resumePhoto.photo) {
+    photoData = {
+      id: resume.resumePhoto.photo.id,
+      resumePhotoId: resume.resumePhoto.id,
+      url: getPublicUrl(resume.resumePhoto.processedPath),
+      fileName: resume.resumePhoto.photo.fileName,
+      fileSize: resume.resumePhoto.photo.fileSize,
+      mimeType: resume.resumePhoto.photo.mimeType,
+      cropData: resume.resumePhoto.cropData
+        ? JSON.parse(resume.resumePhoto.cropData)
+        : undefined,
+    };
+  }
+
   return {
     id: resume.id,
     title: resume.title,
@@ -23,6 +52,7 @@ function formatResumeResponse(
         email: resume.email,
         phone: resume.phone ?? "",
         address: resume.address ?? "",
+        photo: photoData,
       },
       summary: resume.summary ?? "",
       selectedTemplate: resume.selectedTemplate,
@@ -88,6 +118,11 @@ export async function GET(request: Request) {
       education: true,
       experience: true,
       skills: true,
+      resumePhoto: {
+        with: {
+          photo: true,
+        },
+      },
     },
   });
 
@@ -117,12 +152,12 @@ export async function POST(req: Request) {
   // Extract data from content object
   const { personalInfo, designSettings, summary, selectedTemplate } = content;
 
+  // Base resume data (always updated)
   const resumeData = {
     fullName: personalInfo?.fullName ?? "Untitled",
     email: personalInfo?.email ?? "",
     phone: personalInfo?.phone ?? null,
     address: personalInfo?.address ?? null,
-    title: title ?? content.title ?? null,
     summary: summary ?? null,
     selectedTemplate: selectedTemplate ?? "professional",
     themeColor: designSettings?.themeColor ?? "#3b82f6",
@@ -195,9 +230,13 @@ export async function POST(req: Request) {
 
   // Update existing resume by ID
   if (resumeId) {
+    // Only include title in update if it was explicitly provided
+    const updateData =
+      title !== undefined ? { ...resumeData, title } : resumeData;
+
     await db
       .update(resumes)
-      .set(resumeData)
+      .set(updateData)
       .where(
         and(eq(resumes.id, resumeId), eq(resumes.userId, session.user.id))
       );
@@ -212,6 +251,7 @@ export async function POST(req: Request) {
       .insert(resumes)
       .values({
         ...resumeData,
+        title: title ?? content.title ?? null,
         userId: session.user.id,
       })
       .returning({ id: resumes.id });
@@ -226,6 +266,7 @@ export async function POST(req: Request) {
   });
 
   if (existingResume) {
+    // Don't update title for implicit updates
     await db
       .update(resumes)
       .set(resumeData)
@@ -240,6 +281,7 @@ export async function POST(req: Request) {
     .insert(resumes)
     .values({
       ...resumeData,
+      title: title ?? content.title ?? null,
       userId: session.user.id,
     })
     .returning({ id: resumes.id });
@@ -267,8 +309,6 @@ export async function DELETE(req: Request) {
     );
   }
 
-  // Related data (education, experience, skills) will be deleted automatically
-  // due to CASCADE on the foreign key
   await db
     .delete(resumes)
     .where(and(eq(resumes.id, id), eq(resumes.userId, session.user.id)));

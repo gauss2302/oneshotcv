@@ -8,6 +8,7 @@ export const initialPersonalInfo: PersonalInfo = {
   summary: "",
   title: "",
   location: "",
+  photo: undefined,
 };
 
 export const initialDesignSettings: CVDesignSettings = {
@@ -28,7 +29,7 @@ export const initialDesignSettings: CVDesignSettings = {
 };
 
 export const createEmptyCVState = (): CVState => ({
-  personalInfo: { ...initialPersonalInfo },
+  personalInfo: { ...initialPersonalInfo, photo: undefined },
   education: [],
   experience: [],
   skills: [],
