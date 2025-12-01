@@ -175,7 +175,6 @@ export const photos = pgTable("photos", {
 // ==================== RESUME_PHOTOS (Join table) ====================
 export const resumePhotos = pgTable("resume_photos", {
   id: uuid("id").defaultRandom().primaryKey(),
-  // ✅ FIXED: Now references resumes (UUID) instead of resume (TEXT)
   resumeId: uuid("resume_id")
     .notNull()
     .references(() => resumes.id, { onDelete: "cascade" })
@@ -243,7 +242,6 @@ export const photosRelations = relations(photos, ({ one, many }) => ({
 }));
 
 export const resumePhotosRelations = relations(resumePhotos, ({ one }) => ({
-  // ✅ FIXED: Now references resumes instead of resume
   resume: one(resumes, {
     fields: [resumePhotos.resumeId],
     references: [resumes.id],

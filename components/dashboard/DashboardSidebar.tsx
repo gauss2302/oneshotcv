@@ -1,6 +1,8 @@
 "use client";
 
-import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
   Users,
@@ -28,10 +30,16 @@ interface DashboardSidebarProps {
   isCreating?: boolean;
 }
 
-const primaryNav = [
-  { label: "Dashboard", icon: LayoutDashboard },
-  { label: "My Profile", icon: Users },
-  { label: "Documents", icon: FileText },
+interface PrimaryNavItem {
+  label: string;
+  icon: LucideIcon;
+  href: string;
+}
+
+const primaryNav: PrimaryNavItem[] = [
+  { label: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+  { label: "My Profile", icon: Users, href: "/profile" },
+  { label: "Documents", icon: FileText, href: "/documents" },
 ];
 
 const secondaryNav = [
@@ -60,6 +68,14 @@ export function DashboardSidebar({
   isLoading = false,
   isCreating = false,
 }: DashboardSidebarProps) {
+  const pathname = usePathname();
+
+  const isNavActive = (href: string) => {
+    if (!pathname) return false;
+    if (pathname === href) return true;
+    return pathname.startsWith(`${href}/`);
+  };
+
   return (
     <aside className="hidden lg:flex w-72 xl:w-80 flex-col border-r border-gray-200 bg-white">
       <div className="px-6 py-8 border-b border-gray-100">
@@ -77,14 +93,24 @@ export function DashboardSidebar({
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
         <nav className="space-y-1">
           {primaryNav.map((item) => (
-            <button
+            <Link
+              href={item.href}
               key={item.label}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-600 rounded-lg hover:bg-gray-50 transition"
-              type="button"
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition ${
+                isNavActive(item.href)
+                  ? "bg-gray-100 text-gray-900"
+                  : "text-gray-600 hover:bg-gray-50"
+              }`}
+              aria-current={isNavActive(item.href) ? "page" : undefined}
             >
-              <item.icon size={18} className="text-gray-400" />
+              <item.icon
+                size={18}
+                className={
+                  isNavActive(item.href) ? "text-[#FF5656]" : "text-gray-400"
+                }
+              />
               {item.label}
-            </button>
+            </Link>
           ))}
         </nav>
 

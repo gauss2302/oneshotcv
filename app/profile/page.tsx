@@ -48,6 +48,8 @@ export default function ProfilePage() {
                     {session.user.image ? (
                       <Image
                         src={session.user.image}
+                        width={50}
+                        height={50}
                         alt={session.user.name}
                         className="w-full h-full object-cover"
                       />
