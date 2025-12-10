@@ -29,9 +29,60 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { photoId, resumeId, cropData, templateId } = body;
 
-    if (!photoId || !resumeId || !cropData || !templateId) {
+    // Detailed validation with specific error messages
+    if (!photoId) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required field: photoId" },
+        { status: 400 }
+      );
+    }
+    if (!resumeId) {
+      return NextResponse.json(
+        { error: "Missing required field: resumeId" },
+        { status: 400 }
+      );
+    }
+    if (!cropData) {
+      return NextResponse.json(
+        { error: "Missing required field: cropData" },
+        { status: 400 }
+      );
+    }
+    if (!templateId) {
+      return NextResponse.json(
+        { error: "Missing required field: templateId" },
+        { status: 400 }
+      );
+    }
+
+    // Validate cropData structure
+    if (typeof cropData !== "object") {
+      return NextResponse.json(
+        { error: "Invalid crop data format: must be an object" },
+        { status: 400 }
+      );
+    }
+    if (
+      typeof cropData.x !== "number" ||
+      typeof cropData.y !== "number" ||
+      typeof cropData.width !== "number" ||
+      typeof cropData.height !== "number"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid crop data format: x, y, width, and height must be numbers",
+          received: cropData,
+        },
+        { status: 400 }
+      );
+    }
+    if (cropData.width <= 0 || cropData.height <= 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Invalid crop data format: width and height must be greater than 0",
+        },
         { status: 400 }
       );
     }
@@ -39,7 +90,17 @@ export async function POST(req: NextRequest) {
     // Validate template supports photos
     if (!templateSupportsPhoto(templateId)) {
       return NextResponse.json(
-        { error: "This template does not support profile photos" },
+        {
+          error: "This template does not support profile photos",
+          templateId,
+          supportedTemplates: [
+            "sidebar",
+            "modern",
+            "creative",
+            "designer",
+            "executive",
+          ],
+        },
         { status: 400 }
       );
     }
@@ -74,31 +135,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if photo is already attached to another resume
-    const [photoAttachment] = await db
-      .select()
-      .from(resumePhotos)
-      .where(eq(resumePhotos.photoId, photoId))
-      .limit(1);
-
-    if (photoAttachment && photoAttachment.resumeId !== resumeId) {
-      return NextResponse.json(
-        {
-          error:
-            "This photo is already attached to another resume. Please select a different photo or remove it from the other resume first.",
-        },
-        { status: 400 }
-      );
-    }
-
-    // Check if resume already has a photo attached
+    // Check if resume already has a photo attached (we'll replace it)
+    // Note: Photos can be attached to multiple resumes, so we don't check if
+    // this photo is already used elsewhere - that's allowed
     const [existingResumePhoto] = await db
       .select()
       .from(resumePhotos)
       .where(eq(resumePhotos.resumeId, resumeId))
       .limit(1);
 
-    // If there's an existing photo, we'll replace it
+    // If there's an existing photo (same or different), delete it to replace with new crop
     if (existingResumePhoto) {
       // Delete old processed image from MinIO
       try {
@@ -153,8 +199,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Error attaching photo:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to attach photo" },
+      { error: "Failed to attach photo", details: errorMessage },
       { status: 500 }
     );
   }

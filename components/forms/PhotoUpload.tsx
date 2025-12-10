@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import React, { useState, useRef } from 'react';
-import { Upload, X, Crop, Loader2, ImageIcon } from 'lucide-react';
-import { useCVStore } from '@/store/useCVStore';
-import { PhotoCropModal } from './PhotoCropModal';
-import { PhotoLibraryModal } from './PhotoLibraryModal';
+import React, { useState, useRef } from "react";
+import { Upload, X, Crop, Loader2, ImageIcon } from "lucide-react";
+import { useCVStore } from "@/store/useCVStore";
+import { PhotoCropModal } from "./PhotoCropModal";
+import { PhotoLibraryModal } from "./PhotoLibraryModal";
+import { templateSupportsPhoto } from "@/lib/template-config";
 
 interface LibraryPhoto {
   id: string;
@@ -23,29 +24,33 @@ interface CropSelection {
 }
 
 export const PhotoUpload: React.FC = () => {
-  const { personalInfo, updatePersonal, selectedTemplate, resumeId } = useCVStore();
+  const { personalInfo, updatePersonal, selectedTemplate, resumeId } =
+    useCVStore();
   const [uploading, setUploading] = useState(false);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [tempPhoto, setTempPhoto] = useState<LibraryPhoto | null>(null);
   const [tempImageUrl, setTempImageUrl] = useState<string | null>(null);
-  const [statusMessage, setStatusMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: "error" | "success";
+    text: string;
+  } | null>(null);
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [removing, setRemoving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const showStatus = (type: 'error' | 'success', text: string) => {
+  const showStatus = (type: "error" | "success", text: string) => {
     setStatusMessage({ type, text });
   };
 
   const clearStatus = () => setStatusMessage(null);
 
   const getErrorMessage = (error: unknown) =>
-    error instanceof Error ? error.message : '';
+    error instanceof Error ? error.message : "";
 
   const resetTempState = () => {
     setTempPhoto(null);
-    if (tempImageUrl && tempImageUrl.startsWith('blob:')) {
+    if (tempImageUrl && tempImageUrl.startsWith("blob:")) {
       URL.revokeObjectURL(tempImageUrl);
     }
     setTempImageUrl(null);
@@ -58,12 +63,15 @@ export const PhotoUpload: React.FC = () => {
 
     // Validate
     if (file.size > 10 * 1024 * 1024) {
-      showStatus('error', 'File too large. Maximum size is 10MB.');
+      showStatus("error", "File too large. Maximum size is 10MB.");
       return;
     }
 
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      showStatus('error', 'Invalid file type. Please upload JPEG, PNG, or WebP.');
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      showStatus(
+        "error",
+        "Invalid file type. Please upload JPEG, PNG, or WebP."
+      );
       return;
     }
 
@@ -71,16 +79,16 @@ export const PhotoUpload: React.FC = () => {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append("file", file);
 
-      const response = await fetch('/api/photos/upload', {
-        method: 'POST',
+      const response = await fetch("/api/photos/upload", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
+        throw new Error(error.error || "Upload failed");
       }
 
       const data = await response.json();
@@ -97,13 +105,13 @@ export const PhotoUpload: React.FC = () => {
       });
       setShowCropper(true);
     } catch (error) {
-      console.error('Upload error:', error);
+      console.error("Upload error:", error);
       const message = getErrorMessage(error);
-      showStatus('error', message || 'Failed to upload photo');
+      showStatus("error", message || "Failed to upload photo");
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
@@ -118,14 +126,28 @@ export const PhotoUpload: React.FC = () => {
 
   const handleCropSave = async (cropData: CropSelection) => {
     if (!tempPhoto || !resumeId) {
-      showStatus('error', 'Resume ID not found. Please save your resume first.');
+      showStatus(
+        "error",
+        "Resume ID not found. Please save your resume first."
+      );
+      return;
+    }
+
+    // Check if template supports photos before attempting to attach
+    if (!selectedTemplate || !templateSupportsPhoto(selectedTemplate)) {
+      showStatus(
+        "error",
+        `The "${
+          selectedTemplate || "current"
+        }" template does not support profile photos. Please switch to a template that supports photos (sidebar, modern, creative, designer, or executive).`
+      );
       return;
     }
 
     try {
-      const response = await fetch('/api/photos/attach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/photos/attach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           photoId: tempPhoto.id,
           resumeId,
@@ -135,7 +157,9 @@ export const PhotoUpload: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to attach photo');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || "Failed to attach photo";
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -148,24 +172,24 @@ export const PhotoUpload: React.FC = () => {
           url: data.resumePhoto.url,
           fileName: tempPhoto.fileName,
           fileSize: 0, // We don't have this from attach endpoint
-          mimeType: 'image/webp',
+          mimeType: "image/webp",
           cropData: data.resumePhoto.cropData,
         },
       });
 
       setShowCropper(false);
       resetTempState();
-      showStatus('success', 'Photo updated successfully.');
+      showStatus("success", "Photo updated successfully.");
     } catch (error) {
-      console.error('Error attaching photo:', error);
-      showStatus('error', 'Failed to attach photo. Please try again.');
+      console.error("Error attaching photo:", error);
+      showStatus("error", "Failed to attach photo. Please try again.");
     }
   };
 
   const handleRemove = async () => {
     if (!personalInfo.photo || !resumeId) {
       setConfirmingRemove(false);
-      showStatus('error', 'Cannot remove photo right now.');
+      showStatus("error", "Cannot remove photo right now.");
       return;
     }
 
@@ -186,22 +210,22 @@ export const PhotoUpload: React.FC = () => {
         payload.photoId = personalInfo.photo.id;
       }
 
-      const response = await fetch('/api/photos/detach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/photos/detach", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to remove photo');
+        throw new Error("Failed to remove photo");
       }
 
       updatePersonal({ photo: undefined });
       resetTempState();
-      showStatus('success', 'Photo removed from resume.');
+      showStatus("success", "Photo removed from resume.");
     } catch (error) {
-      console.error('Remove error:', error);
-      showStatus('error', 'Failed to remove photo. Please try again.');
+      console.error("Remove error:", error);
+      showStatus("error", "Failed to remove photo. Please try again.");
     } finally {
       setRemoving(false);
       setConfirmingRemove(false);
@@ -226,13 +250,15 @@ export const PhotoUpload: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      <label className="block text-sm font-medium text-gray-700">Profile Photo</label>
+      <label className="block text-sm font-medium text-gray-700">
+        Profile Photo
+      </label>
       {statusMessage && (
         <div
           className={`text-sm px-3 py-2 rounded-md border ${
-            statusMessage.type === 'error'
-              ? 'border-red-200 bg-red-50 text-red-700'
-              : 'border-green-200 bg-green-50 text-green-700'
+            statusMessage.type === "error"
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-green-200 bg-green-50 text-green-700"
           }`}
         >
           {statusMessage.text}
@@ -248,9 +274,11 @@ export const PhotoUpload: React.FC = () => {
               <Upload className="w-8 h-8 text-gray-400 mb-2" />
             )}
             <span className="text-sm text-gray-600">
-              {uploading ? 'Uploading...' : 'Upload new photo'}
+              {uploading ? "Uploading..." : "Upload new photo"}
             </span>
-            <span className="text-xs text-gray-400 mt-1">Max 10MB (JPEG, PNG, WebP)</span>
+            <span className="text-xs text-gray-400 mt-1">
+              Max 10MB (JPEG, PNG, WebP)
+            </span>
             <input
               ref={fileInputRef}
               type="file"
@@ -319,9 +347,12 @@ export const PhotoUpload: React.FC = () => {
       {confirmingRemove && personalInfo.photo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
           <div className="bg-white rounded-lg shadow-xl max-w-sm w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Remove photo?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Remove photo?
+            </h3>
             <p className="text-sm text-gray-600 mb-6">
-              This will detach the selected photo from your resume. You can upload or select a new one afterward.
+              This will detach the selected photo from your resume. You can
+              upload or select a new one afterward.
             </p>
             <div className="flex gap-3">
               <button
@@ -338,7 +369,7 @@ export const PhotoUpload: React.FC = () => {
                 disabled={removing}
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition disabled:opacity-60"
               >
-                {removing ? 'Removing...' : 'Remove'}
+                {removing ? "Removing..." : "Remove"}
               </button>
             </div>
           </div>

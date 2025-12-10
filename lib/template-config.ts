@@ -1,11 +1,15 @@
 // Template photo support configuration
 
 export const TEMPLATES_WITH_PHOTO_SUPPORT = [
-  'sidebar',
-  'modern',
-  'creative',
-  'designer',
-  'executive',
+  "sidebar",
+  "modern",
+  "creative",
+  "designer",
+  "executive",
+  "tech",
+  "corporate",
+  "startup",
+  "compact",
 ];
 
 export interface PhotoFrameConfig {
@@ -40,6 +44,26 @@ const TEMPLATE_PHOTO_CONFIG: Record<string, PhotoFrameConfig> = {
     height: 240,
     aspectRatio: 200 / 240, // 5:6 portrait (approximately 0.83)
   },
+  tech: {
+    width: 112,
+    height: 112,
+    aspectRatio: 1, // 1:1 square
+  },
+  corporate: {
+    width: 128,
+    height: 128,
+    aspectRatio: 1, // 1:1 square
+  },
+  startup: {
+    width: 128,
+    height: 128,
+    aspectRatio: 1, // 1:1 square
+  },
+  compact: {
+    width: 80,
+    height: 80,
+    aspectRatio: 1, // 1:1 square
+  },
 };
 
 /**
@@ -62,7 +86,10 @@ export function getPhotoAspectRatio(templateId: string): number {
  * Get the frame size (display dimensions) for a template
  * Returns dimensions in pixels for rendering in the template
  */
-export function getPhotoFrameSize(templateId: string): { width: number; height: number } {
+export function getPhotoFrameSize(templateId: string): {
+  width: number;
+  height: number;
+} {
   const config = TEMPLATE_PHOTO_CONFIG[templateId];
   return config
     ? { width: config.width, height: config.height }
@@ -73,7 +100,10 @@ export function getPhotoFrameSize(templateId: string): { width: number; height: 
  * Get the maximum dimensions for processing images for a specific template
  * This is used when cropping/processing images on the server
  */
-export function getProcessingDimensions(templateId: string): { maxWidth: number; maxHeight: number } {
+export function getProcessingDimensions(templateId: string): {
+  maxWidth: number;
+  maxHeight: number;
+} {
   const frameSize = getPhotoFrameSize(templateId);
   // Process at 2x resolution for better quality on high-DPI screens
   return {

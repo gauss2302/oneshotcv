@@ -11,6 +11,12 @@ import { getModernMinimalistTemplateBlocks } from "./templates/ModernMinimalistT
 import { getBoldTemplateBlocks } from "./templates/BoldTemplate";
 import { getSidebarTemplateBlocks } from "./templates/SidebarTemplate";
 import { getDesignerTemplateBlocks } from "./templates/DesignerTemplate";
+import { getModernTemplateBlocks } from "./templates/ModernTemplate";
+import { getTechTemplateBlocks } from "./templates/TechTemplate";
+import { getAcademicTemplateBlocks } from "./templates/AcademicTemplate";
+import { getCorporateTemplateBlocks } from "./templates/CorporateTemplate";
+import { getStartupTemplateBlocks } from "./templates/StartupTemplate";
+import { getCompactTemplateBlocks } from "./templates/CompactTemplate";
 import { TemplateBlock } from "./templates/types";
 
 // Constants for A4 layout
@@ -116,12 +122,24 @@ export const CVPreview: React.FC = () => {
         return getElegantTemplateBlocks(data, designSettings);
       case "modern-minimalist":
         return getModernMinimalistTemplateBlocks(data, designSettings);
+      case "modern":
+        return getModernTemplateBlocks(data, designSettings);
       case "bold":
         return getBoldTemplateBlocks(data, designSettings);
       case "sidebar":
         return getSidebarTemplateBlocks(data, designSettings);
       case "designer":
         return getDesignerTemplateBlocks(data, designSettings);
+      case "tech":
+        return getTechTemplateBlocks(data, designSettings);
+      case "academic":
+        return getAcademicTemplateBlocks(data, designSettings);
+      case "corporate":
+        return getCorporateTemplateBlocks(data, designSettings);
+      case "startup":
+        return getStartupTemplateBlocks(data, designSettings);
+      case "compact":
+        return getCompactTemplateBlocks(data, designSettings);
       case "classic":
       default:
         return getClassicTemplateBlocks(data, designSettings);
