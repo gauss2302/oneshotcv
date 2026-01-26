@@ -123,7 +123,7 @@ export function DashboardSidebar({
               type="button"
               onClick={onCreateVersion}
               disabled={isCreating}
-              className="inline-flex items-center justify-center rounded-md border border-gray-200 text-gray-600 hover:text-[#FF5656] hover:border-[#FF5656] transition h-7 w-7 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:text-[#FF5656] hover:border-[#FF5656] transition-all duration-200 h-7 w-7 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isCreating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -160,10 +160,10 @@ export function DashboardSidebar({
                 return (
                   <div
                     key={version.id}
-                    className={`rounded-2xl border px-4 py-3 transition ${
+                    className={`rounded-2xl border px-4 py-3 transition-all duration-200 ${
                       isActive
-                        ? "border-transparent bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white shadow-md"
-                        : "border-gray-200 hover:border-[#FFA239]"
+                        ? "border-transparent bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white shadow-md shadow-[#FFA239]/25"
+                        : "border-gray-200 hover:border-[#FFA239] hover:shadow-sm"
                     }`}
                   >
                     <div className="flex items-center gap-2">

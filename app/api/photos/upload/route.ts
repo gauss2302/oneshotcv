@@ -4,6 +4,13 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { photos } from "@/db/schema";
 import { uploadToMinio, validateImageDimensions } from "@/lib/minio";
+import {
+  validateFileType,
+  sanitizeFileName,
+  validateFileSize,
+  getMimeTypeFromMagic,
+} from "@/lib/file-validation";
+import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit";
 import { v4 as uuidv4 } from "uuid";
 import { eq, count } from "drizzle-orm";
 
@@ -13,6 +20,27 @@ const MAX_PHOTOS_PER_USER = 5;
 
 export async function POST(req: NextRequest) {
   try {
+    // Rate limiting
+    const clientId = getClientIdentifier(req);
+    const rateLimit = checkRateLimit(clientId, rateLimitConfigs.upload);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: "Rate limit exceeded. Please try again later.",
+          retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+        },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": rateLimitConfigs.upload.maxRequests.toString(),
+            "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+            "X-RateLimit-Reset": new Date(rateLimit.resetTime).toISOString(),
+            "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+          },
+        }
+      );
+    }
+
     const session = await auth.api.getSession({
       headers: await headers(),
     });
@@ -45,7 +73,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // Validation
+    // Validate file size first (before reading into buffer)
+    if (!validateFileSize(file.size, MAX_FILE_SIZE)) {
+      return NextResponse.json(
+        { error: "File too large. Maximum size is 10MB." },
+        { status: 400 }
+      );
+    }
+
+    // Validate declared MIME type
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Invalid file type. Only JPEG, PNG, and WebP are allowed." },
@@ -53,14 +89,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (file.size > MAX_FILE_SIZE) {
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Magic number validation - verify actual file type matches declared type
+    const actualMimeType = getMimeTypeFromMagic(buffer);
+    if (!actualMimeType || !validateFileType(buffer, file.type)) {
       return NextResponse.json(
-        { error: "File too large. Maximum size is 10MB." },
+        { error: "File type mismatch. The file content does not match the declared type." },
         { status: 400 }
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    // Use actual detected MIME type instead of declared type
+    const verifiedMimeType = actualMimeType;
 
     // Validate dimensions
     const { width, height, isValid } = await validateImageDimensions(buffer);
@@ -71,12 +112,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sanitize filename
+    const sanitizedFileName = sanitizeFileName(file.name);
+
     const photoId = uuidv4();
-    const extension = file.type.split("/")[1];
+    const extension = verifiedMimeType.split("/")[1];
     const originalPath = `originals/${userId}/${photoId}.${extension}`;
 
     // Upload original to MinIO
-    await uploadToMinio(buffer, originalPath, file.type);
+    await uploadToMinio(buffer, originalPath, verifiedMimeType);
 
     // Save to database
     const [newPhoto] = await db
@@ -85,9 +129,9 @@ export async function POST(req: NextRequest) {
         id: photoId,
         userId,
         originalPath,
-        fileName: file.name,
+        fileName: sanitizedFileName,
         fileSize: file.size,
-        mimeType: file.type,
+        mimeType: verifiedMimeType,
         width,
         height,
         isActive: true,
@@ -105,7 +149,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Photo upload error:", error);
+    // Log error details in development, sanitize in production
+    if (process.env.NODE_ENV === "development") {
+      console.error("Photo upload error:", error);
+    }
     return NextResponse.json(
       { error: "Upload failed. Please try again." },
       { status: 500 }

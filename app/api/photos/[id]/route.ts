@@ -62,7 +62,9 @@ export async function DELETE(
         try {
           await deleteFromMinio(usage.processedPath);
         } catch (error) {
-          console.warn("Failed to delete processed image:", error);
+          if (process.env.NODE_ENV === "development") {
+            console.warn("Failed to delete processed image:", error);
+          }
         }
       }
       await db.delete(resumePhotos).where(eq(resumePhotos.photoId, photoId));
@@ -72,7 +74,9 @@ export async function DELETE(
     try {
       await deleteFromMinio(photo.originalPath);
     } catch (error) {
-      console.warn("Failed to delete original image from MinIO:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Failed to delete original image from MinIO:", error);
+      }
       // Continue even if deletion fails
     }
 
@@ -85,7 +89,9 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error("Error deleting photo:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error deleting photo:", error);
+    }
     return NextResponse.json(
       { error: "Failed to delete photo" },
       { status: 500 }

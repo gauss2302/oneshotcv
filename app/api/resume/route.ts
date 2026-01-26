@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
@@ -13,6 +13,8 @@ import {
 } from "@/db/schema";
 import { and, eq } from "drizzle-orm";
 import { getPublicUrl } from "@/lib/minio";
+import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit";
+import { resumeSaveSchema, resumeIdSchema } from "@/lib/validation";
 
 // Helper: Convert DB record to API response format
 function formatResumeResponse(
@@ -100,7 +102,7 @@ function formatResumeResponse(
   };
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -111,6 +113,17 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const requestedId = searchParams.get("id");
+
+  // Validate resume ID if provided
+  if (requestedId) {
+    const idValidation = resumeIdSchema.safeParse(requestedId);
+    if (!idValidation.success) {
+      return NextResponse.json(
+        { error: "Invalid resume ID format" },
+        { status: 400 }
+      );
+    }
+  }
 
   const resume = await db.query.resumes.findFirst({
     where: requestedId
@@ -135,7 +148,28 @@ export async function GET(request: Request) {
   return NextResponse.json(formatResumeResponse(resume));
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  // Rate limiting
+  const clientId = getClientIdentifier(req);
+  const rateLimit = checkRateLimit(clientId, rateLimitConfigs.save);
+  if (!rateLimit.allowed) {
+    return NextResponse.json(
+      {
+        error: "Rate limit exceeded. Please try again later.",
+        retryAfter: Math.ceil((rateLimit.resetTime - Date.now()) / 1000),
+      },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": rateLimitConfigs.save.maxRequests.toString(),
+          "X-RateLimit-Remaining": rateLimit.remaining.toString(),
+          "X-RateLimit-Reset": new Date(rateLimit.resetTime).toISOString(),
+          "Retry-After": Math.ceil((rateLimit.resetTime - Date.now()) / 1000).toString(),
+        },
+      }
+    );
+  }
+
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -144,11 +178,41 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
+  let body;
+  try {
+    body = await req.json();
+  } catch (error) {
+    return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
+  }
+
   const { content, id: resumeId, title, createNew } = body;
 
   if (!content) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
+  }
+
+  // Validate resume ID if provided
+  if (resumeId) {
+    const idValidation = resumeIdSchema.safeParse(resumeId);
+    if (!idValidation.success) {
+      return NextResponse.json(
+        { error: "Invalid resume ID format" },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Validate request body structure
+  try {
+    resumeSaveSchema.parse({ title: title || "Untitled", content });
+  } catch (validationError: any) {
+    return NextResponse.json(
+      {
+        error: "Validation failed",
+        details: validationError.errors || validationError.message,
+      },
+      { status: 400 }
+    );
   }
 
   // Extract data from content object

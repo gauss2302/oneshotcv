@@ -4,13 +4,21 @@
 import { authClient } from "@/lib/auth/auth-client";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ChevronDown, LogOut, User, LayoutDashboard } from "lucide-react";
-import { useState } from "react";
+import {
+  ChevronDown,
+  LogOut,
+  User,
+  LayoutDashboard,
+  Settings,
+} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 export default function Header() {
   const { data: session } = authClient.useSession();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   const handleSignOut = async () => {
     await authClient.signOut({
@@ -20,92 +28,180 @@ export default function Header() {
         },
       },
     });
+    setIsMenuOpen(false);
   };
 
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  // Close menu on Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isMenuOpen]);
+
   return (
-    <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
-      <Link href="/dashboard" className="flex items-center gap-2">
-        <div className="w-25 h-8 bg-gradient-to-br from-[#FFA239] to-[#FF5656] rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-md shadow-[#FFA239]/20">
-          One Shot
+    <>
+      <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-6 py-3.5 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <Link
+          href="/dashboard"
+          className="flex items-center gap-3 group transition-transform hover:scale-[1.02]"
+        >
+          <div className="w-28 h-9 bg-gradient-to-br from-[#FFA239] to-[#FF5656] rounded-lg flex items-center justify-center text-white font-bold text-base shadow-md shadow-[#FFA239]/25 group-hover:shadow-lg group-hover:shadow-[#FFA239]/30 transition-all">
+            One Shot
+          </div>
+          <span className="font-semibold text-lg text-gray-800 hidden sm:block">
+            Dashboard
+          </span>
+        </Link>
+
+        <div className="flex items-center gap-3">
+          {session ? (
+            <div className="relative">
+              <button
+                ref={buttonRef}
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className={`flex items-center gap-2.5 hover:bg-gray-50/80 px-3 py-2 rounded-lg transition-all duration-200 ${
+                  isMenuOpen ? "bg-gray-50/80" : ""
+                }`}
+                aria-expanded={isMenuOpen}
+                aria-haspopup="true"
+              >
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center overflow-hidden border-2 border-gray-200/50 shadow-sm">
+                  {session.user.image ? (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <User size={18} className="text-gray-600" />
+                  )}
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-semibold text-gray-900 leading-tight">
+                    {session.user.name || "User"}
+                  </p>
+                  <p className="text-xs text-gray-500 leading-tight mt-0.5 truncate max-w-[140px]">
+                    {session.user.email}
+                  </p>
+                </div>
+                <ChevronDown
+                  size={16}
+                  className={`text-gray-400 transition-transform duration-200 ${
+                    isMenuOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+
+              {isMenuOpen && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-200 py-1.5 animate-in fade-in zoom-in-95 duration-200"
+                  role="menu"
+                  aria-orientation="vertical"
+                >
+                  <div className="px-3 py-2 border-b border-gray-200 mb-1">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Account
+                    </p>
+                  </div>
+                  <Link
+                    href="/dashboard"
+                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50/80 flex items-center gap-3 transition-colors rounded-lg mx-1"
+                    onClick={() => setIsMenuOpen(false)}
+                    role="menuitem"
+                  >
+                    <LayoutDashboard size={18} className="text-gray-400" />
+                    <span className="font-medium">Dashboard</span>
+                  </Link>
+                  <Link
+                    href="/profile"
+                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50/80 flex items-center gap-3 transition-colors rounded-lg mx-1"
+                    onClick={() => setIsMenuOpen(false)}
+                    role="menuitem"
+                  >
+                    <User size={18} className="text-gray-400" />
+                    <span className="font-medium">Profile</span>
+                  </Link>
+                  <Link
+                    href="/settings"
+                    className="w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50/80 flex items-center gap-3 transition-colors rounded-lg mx-1"
+                    onClick={() => setIsMenuOpen(false)}
+                    role="menuitem"
+                  >
+                    <Settings size={18} className="text-gray-400" />
+                    <span className="font-medium">Settings</span>
+                  </Link>
+                  <div className="my-1.5 border-t border-gray-200" />
+                  <button
+                    onClick={handleSignOut}
+                    className="w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50/80 flex items-center gap-3 transition-colors rounded-lg mx-1 font-medium"
+                    role="menuitem"
+                  >
+                    <LogOut size={18} className="text-red-500" />
+                    Sign Out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="text-gray-600 hover:text-[#FFA239] font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50/80"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white px-5 py-2 rounded-lg font-semibold hover:from-[#FF5656] hover:to-[#FFA239] transition-all shadow-md shadow-[#FFA239]/25 hover:shadow-lg hover:shadow-[#FFA239]/30"
+              >
+                Get Started
+              </Link>
+            </div>
+          )}
         </div>
-        <span className="font-bold text-xl text-gray-800">Dashboard</span>
-      </Link>
+      </header>
 
-      <div className="flex items-center gap-4">
-        {session ? (
-          <div className="relative">
-            <button
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg transition-colors"
-            >
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden border border-gray-200">
-                {session.user.image ? (
-                  <img
-                    src={session.user.image}
-                    alt={session.user.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <User size={16} className="text-gray-500" />
-                )}
-              </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-900 leading-none">
-                  {session.user.name}
-                </p>
-                <p className="text-xs text-gray-500 mt-1 leading-none">
-                  {session.user.email}
-                </p>
-              </div>
-              <ChevronDown size={16} className="text-gray-400" />
-            </button>
-
-            {isMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 animate-in fade-in zoom-in-95 duration-200">
-                <Link
-                  href="/dashboard"
-                  className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <LayoutDashboard size={16} className="text-gray-400" />
-                  Dashboard
-                </Link>
-                <Link
-                  href="/profile"
-                  className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  <User size={16} className="text-gray-400" />
-                  Profile
-                </Link>
-                <div className="my-1 border-t border-gray-100" />
-                <button
-                  onClick={handleSignOut}
-                  className="w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors"
-                >
-                  <LogOut size={16} className="text-gray-400" />
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="text-gray-600 hover:text-[#FFA239] font-medium transition-colors"
-            >
-              Sign In
-            </Link>
-            <Link
-              href="/register"
-              className="bg-gray-900 text-white px-5 py-2 rounded-full font-medium hover:bg-gray-800 transition-colors"
-            >
-              Get Started
-            </Link>
-          </div>
-        )}
-      </div>
-    </header>
+      {/* Backdrop overlay when menu is open */}
+      {isMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/10 backdrop-blur-sm z-40 pointer-events-auto"
+          onClick={() => setIsMenuOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+    </>
   );
 }

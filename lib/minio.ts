@@ -1,15 +1,47 @@
 import { Client } from 'minio';
 import sharp from 'sharp';
 
-const minioClient = new Client({
-  endPoint: process.env.MINIO_ENDPOINT!,
-  port: parseInt(process.env.MINIO_PORT!),
-  useSSL: process.env.MINIO_USE_SSL === 'true',
-  accessKey: process.env.MINIO_ACCESS_KEY!,
-  secretKey: process.env.MINIO_SECRET_KEY!,
-});
+// Lazy initialization to prevent build-time errors when env vars are not available
+let minioClient: Client | null = null;
+let BUCKET_NAME: string | null = null;
 
-const BUCKET_NAME = process.env.MINIO_BUCKET_NAME!;
+export function getMinioClient(): Client {
+  if (!minioClient) {
+    const endPoint = process.env.MINIO_ENDPOINT;
+    const port = process.env.MINIO_PORT;
+    const useSSL = process.env.MINIO_USE_SSL;
+    const accessKey = process.env.MINIO_ACCESS_KEY;
+    const secretKey = process.env.MINIO_SECRET_KEY;
+
+    if (!endPoint || !port || !accessKey || !secretKey) {
+      throw new Error(
+        'MinIO configuration is missing. Please set MINIO_ENDPOINT, MINIO_PORT, MINIO_ACCESS_KEY, and MINIO_SECRET_KEY environment variables.'
+      );
+    }
+
+    minioClient = new Client({
+      endPoint,
+      port: parseInt(port),
+      useSSL: useSSL === 'true',
+      accessKey,
+      secretKey,
+    });
+  }
+
+  return minioClient;
+}
+
+export function getBucketName(): string {
+  if (!BUCKET_NAME) {
+    BUCKET_NAME = process.env.MINIO_BUCKET_NAME ?? null;
+    if (!BUCKET_NAME) {
+      throw new Error(
+        'MINIO_BUCKET_NAME environment variable is not set.'
+      );
+    }
+  }
+  return BUCKET_NAME;
+}
 
 export interface CropData {
   x: number;
@@ -21,10 +53,15 @@ export interface CropData {
 
 export async function ensureBucket(): Promise<void> {
   try {
-    const exists = await minioClient.bucketExists(BUCKET_NAME);
+    const client = getMinioClient();
+    const bucketName = getBucketName();
+    
+    const exists = await client.bucketExists(bucketName);
     if (!exists) {
-      await minioClient.makeBucket(BUCKET_NAME, 'us-east-1');
-      console.log(`MinIO bucket "${BUCKET_NAME}" created`);
+      await client.makeBucket(bucketName, 'us-east-1');
+      if (process.env.NODE_ENV === "development") {
+        console.log(`MinIO bucket "${bucketName}" created`);
+      }
     }
 
     // Always ensure the policy is set correctly (for both new and existing buckets)
@@ -35,21 +72,25 @@ export async function ensureBucket(): Promise<void> {
           Effect: 'Allow',
           Principal: { AWS: ['*'] },
           Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${BUCKET_NAME}/processed/*`]
+          Resource: [`arn:aws:s3:::${bucketName}/processed/*`]
         },
         {
           Effect: 'Allow',
           Principal: { AWS: ['*'] },
           Action: ['s3:GetObject'],
-          Resource: [`arn:aws:s3:::${BUCKET_NAME}/originals/*`]
+          Resource: [`arn:aws:s3:::${bucketName}/originals/*`]
         }
       ]
     };
 
-    await minioClient.setBucketPolicy(BUCKET_NAME, JSON.stringify(policy));
-    console.log(`MinIO bucket "${BUCKET_NAME}" policy updated - public access enabled for originals and processed folders`);
+    await client.setBucketPolicy(bucketName, JSON.stringify(policy));
+    if (process.env.NODE_ENV === "development") {
+      console.log(`MinIO bucket "${bucketName}" policy updated - public access enabled for originals and processed folders`);
+    }
   } catch (error) {
-    console.error('Error ensuring MinIO bucket:', error);
+    if (process.env.NODE_ENV === "development") {
+      console.error('Error ensuring MinIO bucket:', error);
+    }
     throw error;
   }
 }
@@ -62,13 +103,18 @@ export async function uploadToMinio(
   try {
     await ensureBucket();
 
-    await minioClient.putObject(BUCKET_NAME, path, buffer, buffer.length, {
+    const client = getMinioClient();
+    const bucketName = getBucketName();
+
+    await client.putObject(bucketName, path, buffer, buffer.length, {
       'Content-Type': contentType,
     });
 
     return path;
   } catch (error) {
-    console.error('Error uploading to MinIO:', error);
+    if (process.env.NODE_ENV === "development") {
+      console.error('Error uploading to MinIO:', error);
+    }
     throw error;
   }
 }
@@ -84,7 +130,11 @@ export async function processImage(
   }
 ): Promise<{ path: string; width: number; height: number }> {
   try {
-    let processor = sharp(buffer);
+    let processor = sharp(buffer, {
+      // Optimize for performance
+      failOnError: false,
+      limitInputPixels: 268402689, // ~16383^2 pixels (safety limit)
+    });
 
     // Apply crop if provided
     if (options.crop) {
@@ -101,12 +151,18 @@ export async function processImage(
       processor = processor.resize(options.maxWidth, options.maxHeight, {
         withoutEnlargement: true,
         fit: 'inside',
+        // Optimize resize algorithm for performance
+        kernel: sharp.kernel.lanczos3,
       });
     }
 
-    // Convert to WebP format
+    // Convert to WebP format with optimized settings
     const webpBuffer = await processor
-      .webp({ quality: options.quality || 85 })
+      .webp({ 
+        quality: options.quality || 85,
+        effort: 4, // Balance between compression speed and file size (0-6)
+        smartSubsample: true, // Better quality for smaller files
+      })
       .toBuffer();
 
     // Get metadata for dimensions
@@ -122,24 +178,32 @@ export async function processImage(
       height: metadata.height!,
     };
   } catch (error) {
-    console.error('Error processing image:', error);
+    if (process.env.NODE_ENV === "development") {
+      console.error('Error processing image:', error);
+    }
     throw error;
   }
 }
 
 export async function deleteFromMinio(path: string): Promise<void> {
   try {
-    await minioClient.removeObject(BUCKET_NAME, path);
+    const client = getMinioClient();
+    const bucketName = getBucketName();
+    await client.removeObject(bucketName, path);
   } catch (error) {
-    console.error('Error deleting from MinIO:', error);
+    if (process.env.NODE_ENV === "development") {
+      console.error('Error deleting from MinIO:', error);
+    }
     throw error;
   }
 }
 
 export async function getFromMinio(path: string): Promise<Buffer> {
   try {
+    const client = getMinioClient();
+    const bucketName = getBucketName();
     const chunks: Buffer[] = [];
-    const stream = await minioClient.getObject(BUCKET_NAME, path);
+    const stream = await client.getObject(bucketName, path);
 
     return new Promise((resolve, reject) => {
       stream.on('data', (chunk) => chunks.push(chunk));
@@ -147,7 +211,9 @@ export async function getFromMinio(path: string): Promise<Buffer> {
       stream.on('error', reject);
     });
   } catch (error) {
-    console.error('Error getting from MinIO:', error);
+    if (process.env.NODE_ENV === "development") {
+      console.error('Error getting from MinIO:', error);
+    }
     throw error;
   }
 }
@@ -165,11 +231,22 @@ export async function validateImageDimensions(
 
     return { width, height, isValid };
   } catch (error) {
-    console.error('Error validating image dimensions:', error);
+    if (process.env.NODE_ENV === "development") {
+      console.error('Error validating image dimensions:', error);
+    }
     throw error;
   }
 }
 
 export function getPublicUrl(path: string): string {
-  return `${process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL}/${BUCKET_NAME}/${path}`;
+  const publicUrl = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL;
+  const bucketName = process.env.MINIO_BUCKET_NAME;
+  
+  if (!publicUrl || !bucketName) {
+    throw new Error(
+      'MinIO public URL or bucket name is not configured. Please set NEXT_PUBLIC_MINIO_PUBLIC_URL and MINIO_BUCKET_NAME environment variables.'
+    );
+  }
+  
+  return `${publicUrl}/${bucketName}/${path}`;
 }

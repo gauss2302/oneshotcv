@@ -60,7 +60,9 @@ export async function POST(req: NextRequest) {
     try {
       await deleteFromMinio(resumePhoto.resumePhoto.processedPath);
     } catch (error) {
-      console.warn("Failed to delete old processed image:", error);
+      if (process.env.NODE_ENV === "development") {
+        console.warn("Failed to delete old processed image:", error);
+      }
       // Continue even if deletion fails
     }
 
@@ -98,7 +100,9 @@ export async function POST(req: NextRequest) {
       cropData,
     });
   } catch (error) {
-    console.error("Error re-cropping photo:", error);
+    if (process.env.NODE_ENV === "development") {
+      console.error("Error re-cropping photo:", error);
+    }
     return NextResponse.json(
       { error: "Failed to update crop" },
       { status: 500 }

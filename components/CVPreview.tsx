@@ -1,4 +1,10 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, {
+  useRef,
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { useCVStore } from "@/store/useCVStore";
 import { PreviewSkeleton } from "./ui/EditorSkeleton";
 import { getClassicTemplateBlocks } from "./templates/ClassicTemplate";
@@ -18,6 +24,7 @@ import { getCorporateTemplateBlocks } from "./templates/CorporateTemplate";
 import { getStartupTemplateBlocks } from "./templates/StartupTemplate";
 import { getCompactTemplateBlocks } from "./templates/CompactTemplate";
 import { TemplateBlock } from "./templates/types";
+import { templateColors } from "./templates/colors";
 
 // Constants for A4 layout
 const A4_WIDTH_MM = 210;
@@ -31,10 +38,10 @@ const DEFAULT_FONT_SIZES = { header: 2.25, sectionTitle: 1.5, body: 1 };
 const DEFAULT_SPACING = { lineHeight: 1.6, sectionPadding: 2, itemGap: 1 };
 
 const colors = {
-  textMain: "#111827",
-  textSec: "#4b5563",
-  textMuted: "#6b7280",
-  bgPage: "#ffffff",
+  textMain: templateColors.textMain,
+  textSec: templateColors.textSec,
+  textMuted: templateColors.textMuted,
+  bgPage: templateColors.bgWhite,
 };
 
 interface PageBlock {
@@ -43,7 +50,7 @@ interface PageBlock {
   content: React.ReactNode;
 }
 
-export const CVPreview: React.FC = () => {
+export const CVPreview: React.FC = React.memo(() => {
   const {
     personalInfo,
     education,
@@ -91,102 +98,128 @@ export const CVPreview: React.FC = () => {
     "--cv-item-gap": `${resolvedSpacing.itemGap}rem`,
   } as React.CSSProperties;
 
-  const dataKey = JSON.stringify({
-    personalInfo,
-    education,
-    experience,
-    skills,
-    selectedTemplate,
-    designSettings,
-    dataVersion,
-  });
-
-  const getBlocks = (): TemplateBlock[] => {
-    const data = {
+  // Memoize template data to prevent unnecessary recalculations
+  const templateData = useMemo(
+    () => ({
       personalInfo,
       education,
       experience,
       skills,
       designSettings,
-    };
+    }),
+    [personalInfo, education, experience, skills, designSettings]
+  );
+
+  // Memoize blocks generation - only recalculate when data changes
+  const getBlocks = useCallback((): TemplateBlock[] => {
     switch (selectedTemplate) {
       case "creative":
-        return getCreativeTemplateBlocks(data, designSettings);
+        return getCreativeTemplateBlocks(templateData, designSettings);
       case "minimalist":
-        return getMinimalistTemplateBlocks(data, designSettings);
+        return getMinimalistTemplateBlocks(templateData, designSettings);
       case "professional":
-        return getProfessionalTemplateBlocks(data, designSettings);
+        return getProfessionalTemplateBlocks(templateData, designSettings);
       case "executive":
-        return getExecutiveTemplateBlocks(data, designSettings);
+        return getExecutiveTemplateBlocks(templateData, designSettings);
       case "elegant":
-        return getElegantTemplateBlocks(data, designSettings);
+        return getElegantTemplateBlocks(templateData, designSettings);
       case "modern-minimalist":
-        return getModernMinimalistTemplateBlocks(data, designSettings);
+        return getModernMinimalistTemplateBlocks(templateData, designSettings);
       case "modern":
-        return getModernTemplateBlocks(data, designSettings);
+        return getModernTemplateBlocks(templateData, designSettings);
       case "bold":
-        return getBoldTemplateBlocks(data, designSettings);
+        return getBoldTemplateBlocks(templateData, designSettings);
       case "sidebar":
-        return getSidebarTemplateBlocks(data, designSettings);
+        return getSidebarTemplateBlocks(templateData, designSettings);
       case "designer":
-        return getDesignerTemplateBlocks(data, designSettings);
+        return getDesignerTemplateBlocks(templateData, designSettings);
       case "tech":
-        return getTechTemplateBlocks(data, designSettings);
+        return getTechTemplateBlocks(templateData, designSettings);
       case "academic":
-        return getAcademicTemplateBlocks(data, designSettings);
+        return getAcademicTemplateBlocks(templateData, designSettings);
       case "corporate":
-        return getCorporateTemplateBlocks(data, designSettings);
+        return getCorporateTemplateBlocks(templateData, designSettings);
       case "startup":
-        return getStartupTemplateBlocks(data, designSettings);
+        return getStartupTemplateBlocks(templateData, designSettings);
       case "compact":
-        return getCompactTemplateBlocks(data, designSettings);
+        return getCompactTemplateBlocks(templateData, designSettings);
       case "classic":
       default:
-        return getClassicTemplateBlocks(data, designSettings);
+        return getClassicTemplateBlocks(templateData, designSettings);
     }
-  };
+  }, [selectedTemplate, templateData, designSettings]);
+
+  // Memoize data key for effect dependencies
+  const dataKey = useMemo(
+    () =>
+      JSON.stringify({
+        personalInfo,
+        education,
+        experience,
+        skills,
+        selectedTemplate,
+        designSettings,
+        dataVersion,
+      }),
+    [
+      personalInfo,
+      education,
+      experience,
+      skills,
+      selectedTemplate,
+      designSettings,
+      dataVersion,
+    ]
+  );
 
   useEffect(() => {
     if (!measureRef.current || isLoading) return;
 
-    const frame = requestAnimationFrame(() => {
-      const container = measureRef.current;
-      if (!container) return;
+    // Use double RAF for smoother updates
+    let frame2: number | undefined;
+    const frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
+        const container = measureRef.current;
+        if (!container) return;
 
-      const children = Array.from(container.children) as HTMLElement[];
-      const blocks = getBlocks();
+        const children = Array.from(container.children) as HTMLElement[];
+        const blocks = getBlocks();
 
-      const measuredBlocks: PageBlock[] = children.map((child, index) => ({
-        id: blocks[index]?.id || `unknown-${index}`,
-        height: child.offsetHeight,
-        content: blocks[index]?.content,
-      }));
+        const measuredBlocks: PageBlock[] = children.map((child, index) => ({
+          id: blocks[index]?.id || `unknown-${index}`,
+          height: child.offsetHeight,
+          content: blocks[index]?.content,
+        }));
 
-      const newPages: { id: string; content: React.ReactNode }[][] = [];
-      let currentPage: { id: string; content: React.ReactNode }[] = [];
-      let currentHeight = 0;
+        const newPages: { id: string; content: React.ReactNode }[][] = [];
+        let currentPage: { id: string; content: React.ReactNode }[] = [];
+        let currentHeight = 0;
 
-      measuredBlocks.forEach((block) => {
-        if (currentHeight + block.height > CONTENT_HEIGHT_PX) {
-          if (currentPage.length > 0) {
-            newPages.push(currentPage);
-            currentPage = [];
-            currentHeight = 0;
+        measuredBlocks.forEach((block) => {
+          if (currentHeight + block.height > CONTENT_HEIGHT_PX) {
+            if (currentPage.length > 0) {
+              newPages.push(currentPage);
+              currentPage = [];
+              currentHeight = 0;
+            }
           }
+          currentPage.push({ id: block.id, content: block.content });
+          currentHeight += block.height;
+        });
+
+        if (currentPage.length > 0) {
+          newPages.push(currentPage);
         }
-        currentPage.push({ id: block.id, content: block.content });
-        currentHeight += block.height;
+
+        setPages(newPages);
       });
-
-      if (currentPage.length > 0) {
-        newPages.push(currentPage);
-      }
-
-      setPages(newPages);
     });
 
-    return () => cancelAnimationFrame(frame);
-  }, [dataKey, isLoading]);
+    return () => {
+      if (frame1) cancelAnimationFrame(frame1);
+      if (frame2) cancelAnimationFrame(frame2);
+    };
+  }, [dataKey, isLoading, getBlocks]);
 
   const renderMeasurementBlocks = () => {
     const blocks = getBlocks();
@@ -209,11 +242,12 @@ export const CVPreview: React.FC = () => {
   return (
     <div className="w-full h-full flex flex-col relative">
       {/* Zoom Controls */}
-      <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-white p-1.5 rounded-lg shadow-md border border-gray-200">
+      <div className="absolute top-4 right-4 z-20 flex items-center gap-2 bg-white p-1.5 rounded-lg shadow-md border border-gray-200 backdrop-blur-sm">
         <button
           onClick={() => setZoom((z) => Math.max(0.3, z - 0.1))}
-          className="p-1.5 hover:bg-gray-100 rounded text-gray-600"
+          className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors duration-150 active:scale-95"
           title="Zoom Out"
+          aria-label="Zoom out"
         >
           <svg
             width="16"
@@ -231,8 +265,9 @@ export const CVPreview: React.FC = () => {
         </span>
         <button
           onClick={() => setZoom((z) => Math.min(2, z + 0.1))}
-          className="p-1.5 hover:bg-gray-100 rounded text-gray-600"
+          className="p-1.5 hover:bg-gray-100 rounded text-gray-600 transition-colors duration-150 active:scale-95"
           title="Zoom In"
+          aria-label="Zoom in"
         >
           <svg
             width="16"
@@ -249,7 +284,8 @@ export const CVPreview: React.FC = () => {
         <div className="w-px h-4 bg-gray-300 mx-1"></div>
         <button
           onClick={() => setZoom(0.8)}
-          className="px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded"
+          className="px-2 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors duration-150 active:scale-95"
+          aria-label="Reset zoom"
         >
           Reset
         </button>
@@ -257,7 +293,7 @@ export const CVPreview: React.FC = () => {
 
       <div className="flex-1 overflow-auto bg-gray-100 p-8 flex justify-center items-start">
         <div
-          className="flex flex-col gap-8 transition-transform origin-top duration-200 ease-out"
+          className="flex flex-col gap-8 transition-transform origin-top duration-300 ease-out"
           style={{ transform: `scale(${zoom})` }}
         >
           {/* Hidden Measurement Container */}
@@ -280,7 +316,7 @@ export const CVPreview: React.FC = () => {
           {pages.map((pageContent, index) => (
             <div
               key={`${dataVersion}-${index}`}
-              className="cv-page bg-white shadow-lg box-border mx-auto relative"
+              className="cv-page bg-white shadow-lg box-border mx-auto relative opacity-0 animate-fade-in"
               style={{
                 width: "210mm",
                 height: "297mm",
@@ -289,6 +325,8 @@ export const CVPreview: React.FC = () => {
                 color: colors.textMain,
                 overflow: "hidden",
                 marginBottom: "20px",
+                animation: "fadeIn 0.3s ease-in-out forwards",
+                animationDelay: `${index * 0.1}s`,
                 ...designVars,
               }}
             >
@@ -321,4 +359,5 @@ export const CVPreview: React.FC = () => {
       </div>
     </div>
   );
-};
+});
+CVPreview.displayName = 'CVPreview';

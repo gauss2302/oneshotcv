@@ -16,6 +16,9 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("emailVerified").notNull().default(false),
   image: text("image"),
+  hasCompletedOnboarding: boolean("has_completed_onboarding")
+    .notNull()
+    .default(false),
   createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updatedAt", { mode: "date" })
     .notNull()
@@ -197,6 +200,8 @@ export const resumePhotos = pgTable("resume_photos", {
 export const userRelations = relations(user, ({ many }) => ({
   resumes: many(resumes),
   photos: many(photos),
+  polarCustomer: many(polarCustomers),
+  polarSubscriptions: many(polarSubscriptions),
 }));
 
 export const resumesRelations = relations(resumes, ({ one, many }) => ({
@@ -251,4 +256,72 @@ export const resumePhotosRelations = relations(resumePhotos, ({ one }) => ({
     fields: [resumePhotos.photoId],
     references: [photos.id],
   }),
+}));
+
+// ==================== POLAR SUBSCRIPTIONS ====================
+export const polarCustomers = pgTable("polar_customers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" })
+    .unique(),
+  polarCustomerId: text("polar_customer_id").notNull().unique(),
+  email: text("email").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+export const polarSubscriptions = pgTable("polar_subscriptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  polarCustomerId: text("polar_customer_id")
+    .notNull()
+    .references(() => polarCustomers.polarCustomerId, { onDelete: "cascade" }),
+  polarSubscriptionId: text("polar_subscription_id").notNull().unique(),
+  status: text("status").notNull(), // active, canceled, past_due, etc.
+  productId: text("product_id"),
+  productPriceId: text("product_price_id"),
+  currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }),
+  cancelAtPeriodEnd: boolean("cancel_at_period_end").default(false).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull()
+    .$onUpdate(() => new Date()),
+});
+
+// ==================== POLAR RELATIONS ====================
+export const polarCustomersRelations = relations(polarCustomers, ({ one, many }) => ({
+  user: one(user, {
+    fields: [polarCustomers.userId],
+    references: [user.id],
+  }),
+  subscriptions: many(polarSubscriptions),
+}));
+
+export const polarSubscriptionsRelations = relations(polarSubscriptions, ({ one }) => ({
+  user: one(user, {
+    fields: [polarSubscriptions.userId],
+    references: [user.id],
+  }),
+  customer: one(polarCustomers, {
+    fields: [polarSubscriptions.polarCustomerId],
+    references: [polarCustomers.polarCustomerId],
+  }),
+}));
+
+export const userRelationsWithPolar = relations(user, ({ many }) => ({
+  resumes: many(resumes),
+  photos: many(photos),
+  polarCustomer: many(polarCustomers),
+  polarSubscriptions: many(polarSubscriptions),
 }));

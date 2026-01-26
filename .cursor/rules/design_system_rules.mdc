@@ -1,0 +1,640 @@
+# Design System Rules for CV Builder Application
+
+## Overview
+
+This document defines the comprehensive design system for the CV Builder application. It establishes consistent design tokens, component patterns, styling approaches, and Figma integration guidelines to ensure design consistency across the entire application.
+
+## Table of Contents
+
+1. [Design Tokens](#design-tokens)
+2. [Component Library](#component-library)
+3. [Frameworks & Libraries](#frameworks--libraries)
+4. [Asset Management](#asset-management)
+5. [Icon System](#icon-system)
+6. [Styling Approach](#styling-approach)
+7. [Project Structure](#project-structure)
+8. [Figma Integration](#figma-integration)
+
+---
+
+## Design Tokens
+
+### Token Definitions Location
+
+**Primary Location**: `lib/design-tokens.ts`
+**CSS Variables**: `app/globals.css`
+
+### Color System
+
+#### Brand Colors
+```typescript
+// From lib/design-tokens.ts
+brandColors = {
+  primary: {
+    orange: '#FFA239',
+    red: '#FF5656',
+  },
+  gradient: {
+    from: '#FFA239',
+    to: '#FF5656',
+  },
+}
+```
+
+**Usage in Tailwind**:
+```tsx
+// Gradient button
+className="bg-gradient-to-r from-[#FFA239] to-[#FF5656]"
+
+// Shadow with brand color
+className="shadow-md shadow-[#FFA239]/25"
+```
+
+#### Semantic Color Tokens
+
+**Background Colors**:
+- `--color-background-primary`: `#ffffff` (white)
+- `--color-background-secondary`: `#f9fafb` (gray-50)
+- `--color-background-tertiary`: `#f3f4f6` (gray-100)
+
+**Foreground Colors**:
+- `--color-foreground-primary`: `#111827` (gray-900) - Main text
+- `--color-foreground-secondary`: `#4b5563` (gray-600) - Secondary text
+- `--color-foreground-tertiary`: `#6b7280` (gray-500) - Tertiary text
+- `--color-foreground-muted`: `#9ca3af` (gray-400) - Muted text
+
+**Border Colors**:
+- `--color-border-default`: `#e5e7eb` (gray-200) - Default borders
+- `--color-border-light`: `#f3f4f6` (gray-100) - Light borders
+- `--color-border-medium`: `#d1d5db` (gray-300) - Medium borders
+
+**Semantic Colors**:
+- Success: `#10b981` (green-500)
+- Error: `#ef4444` (red-500)
+- Warning: `#f59e0b` (amber-500)
+- Info: `#3b82f6` (blue-500)
+
+### Typography System
+
+#### Font Families
+```css
+--font-family-sans: ui-sans-serif, system-ui, -apple-system, ...
+--font-family-serif: Georgia, "Times New Roman", serif
+--font-family-mono: ui-monospace, SFMono-Regular, ...
+```
+
+#### Type Scale (rem-based)
+- **Display**: `3rem` (48px) - Hero headings
+- **H1**: `2.25rem` (36px) - Page titles
+- **H2**: `1.875rem` (30px) - Section headers
+- **H3**: `1.5rem` (24px) - Subsection headers
+- **H4**: `1.25rem` (20px) - Card titles
+- **Body Large**: `1.125rem` (18px)
+- **Body**: `1rem` (16px) - Base
+- **Body Small**: `0.875rem` (14px)
+- **Caption**: `0.75rem` (12px)
+
+#### Line Heights
+- **Tight**: `1.2` - For headings
+- **Normal**: `1.5` - For body text
+- **Relaxed**: `1.75` - For long-form content
+
+#### Font Weights
+- Normal: `400`
+- Medium: `500`
+- Semibold: `600`
+- Bold: `700`
+
+### Spacing Scale
+
+**8px base unit system**:
+```typescript
+spacing = {
+  0: '0',
+  0.5: '0.125rem',  // 2px
+  1: '0.25rem',     // 4px
+  1.5: '0.375rem',  // 6px
+  2: '0.5rem',      // 8px
+  3: '0.75rem',     // 12px
+  4: '1rem',        // 16px
+  6: '1.5rem',      // 24px
+  8: '2rem',        // 32px
+  10: '2.5rem',     // 40px
+  12: '3rem',       // 48px
+  16: '4rem',       // 64px
+  20: '5rem',       // 80px
+  24: '6rem',       // 96px
+}
+```
+
+**Usage**: Always use spacing scale values in Tailwind classes (e.g., `p-4`, `mb-6`, `gap-2`)
+
+### Border Radius
+
+```typescript
+borderRadius = {
+  none: '0',
+  sm: '0.375rem',   // 6px
+  md: '0.5rem',     // 8px - Default
+  lg: '0.75rem',    // 12px
+  xl: '1rem',       // 16px
+  '2xl': '1.5rem',  // 24px - Cards
+  '3xl': '2rem',    // 32px
+  full: '9999px',
+}
+```
+
+**Common Usage**:
+- Buttons: `rounded-lg` (12px)
+- Cards: `rounded-2xl` (24px)
+- Inputs: `rounded-lg` (12px)
+- Small elements: `rounded-md` (8px)
+
+### Shadows
+
+```typescript
+shadows = {
+  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
+  md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+  brand: '0 4px 6px -1px rgb(255 162 57 / 0.25), 0 2px 4px -2px rgb(255 162 57 / 0.25)',
+  brandLg: '0 10px 15px -3px rgb(255 162 57 / 0.25), 0 4px 6px -4px rgb(255 162 57 / 0.25)',
+}
+```
+
+**Usage**:
+- Cards: `shadow-sm` or `shadow-md`
+- Modals: `shadow-xl`
+- Brand elements: `shadow-md shadow-[#FFA239]/25`
+
+### Z-Index Scale
+
+```typescript
+zIndex = {
+  base: 0,
+  dropdown: 1000,
+  sticky: 1020,
+  fixed: 1030,
+  modalBackdrop: 1040,
+  modal: 1050,
+  popover: 1060,
+  tooltip: 1070,
+}
+```
+
+### Transitions
+
+**Duration**:
+- Fast: `150ms`
+- Normal: `200ms` (default)
+- Slow: `300ms`
+
+**Easing**: `cubic-bezier(0.4, 0, 0.2, 1)`
+
+**Usage**: Always include `transition-all duration-200` for interactive elements
+
+---
+
+## Component Library
+
+### Location
+**Base UI Components**: `components/ui/`
+
+### Component Architecture
+
+All UI components follow these patterns:
+
+1. **Use `class-variance-authority` (CVA)** for variants
+2. **Use `cn()` utility** for className merging
+3. **Forward refs** for all interactive components
+4. **Support `asChild` pattern** where appropriate (Radix UI)
+5. **TypeScript types** for all props
+
+### Available Components
+
+#### Button (`components/ui/button.tsx`)
+
+**Variants**:
+- `default`: Brand gradient button (primary CTA)
+- `destructive`: Red button for destructive actions
+- `outline`: Outlined button
+- `secondary`: Gray button
+- `ghost`: Transparent button with hover
+- `link`: Text link style
+- `subtle`: Subtle background button
+
+**Sizes**:
+- `sm`: Small (h-9)
+- `default`: Default (h-10)
+- `lg`: Large (h-11)
+- `icon`: Icon-only (h-10 w-10)
+
+**Example**:
+```tsx
+<Button variant="default" size="lg">
+  Create Resume
+</Button>
+```
+
+#### Card (`components/ui/card.tsx`)
+
+**Sub-components**:
+- `Card`: Container
+- `CardHeader`: Header section
+- `CardTitle`: Title text
+- `CardDescription`: Description text
+- `CardContent`: Main content
+- `CardFooter`: Footer section
+
+**Example**:
+```tsx
+<Card>
+  <CardHeader>
+    <CardTitle>Resume Title</CardTitle>
+    <CardDescription>Last updated 2 days ago</CardDescription>
+  </CardHeader>
+  <CardContent>
+    {/* Content */}
+  </CardContent>
+</Card>
+```
+
+#### Input (`components/ui/input.tsx`)
+
+**Features**:
+- Consistent border radius (`rounded-lg`)
+- Focus ring with brand color
+- Proper disabled states
+- Smooth transitions
+
+**Example**:
+```tsx
+<Input 
+  type="text" 
+  placeholder="Enter resume name"
+  className="w-full"
+/>
+```
+
+#### Label (`components/ui/label.tsx`)
+
+**Features**:
+- Proper font weight and size
+- Accessible with Radix UI
+- Consistent text color
+
+**Example**:
+```tsx
+<Label htmlFor="resume-name">
+  Resume Name
+</Label>
+```
+
+### Component Patterns
+
+#### Using Design Tokens in Components
+
+```tsx
+// ✅ Good - Using design tokens
+<button className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white rounded-lg px-4 py-2 shadow-md shadow-[#FFA239]/25 transition-all duration-200">
+
+// ❌ Bad - Hardcoded values
+<button className="bg-orange-500 text-white rounded-md px-5 py-3">
+```
+
+#### Consistent Spacing
+
+```tsx
+// ✅ Good - Using spacing scale
+<div className="p-6 mb-4 gap-2">
+
+// ❌ Bad - Arbitrary values
+<div className="p-[23px] mb-[17px] gap-[9px]">
+```
+
+---
+
+## Frameworks & Libraries
+
+### UI Framework
+- **React 19** with Next.js 16
+- **TypeScript** for type safety
+
+### Styling
+- **Tailwind CSS v4** - Utility-first CSS framework
+- **PostCSS** - CSS processing
+- **class-variance-authority** - Component variants
+- **clsx** + **tailwind-merge** - className utilities
+
+### UI Primitives
+- **Radix UI** - Accessible component primitives
+  - `@radix-ui/react-label`
+  - `@radix-ui/react-slot`
+
+### Icons
+- **Lucide React** - Icon library
+  - Consistent sizing: 16px, 18px, 20px, 24px
+  - Stroke width: 1.5px or 2px
+  - Color inheritance from parent
+
+### Build System
+- **Next.js** - Framework and bundler
+- **TypeScript** - Type checking
+
+---
+
+## Asset Management
+
+### Location
+**Assets Directory**: `public/assets/`
+
+### Structure
+```
+public/
+  assets/
+    images/     # Images (hero, illustrations, etc.)
+    icons/      # Custom icons (if needed beyond Lucide)
+```
+
+### Current Assets
+- `flying_cv.png` - Hero illustration
+- `main_hero.png` - Main hero image
+
+### Best Practices
+
+1. **Use Next.js Image Component**:
+```tsx
+import Image from 'next/image'
+
+<Image 
+  src="/assets/images/hero.png" 
+  alt="Hero"
+  width={800}
+  height={600}
+/>
+```
+
+2. **Optimize Images**: Use WebP format when possible
+3. **Lazy Loading**: Images should be lazy-loaded when below fold
+4. **CDN**: Consider CDN for production assets
+
+---
+
+## Icon System
+
+### Primary Icon Library
+**Lucide React** - Used throughout the application
+
+### Icon Sizing Standards
+- **Small**: 16px - Inline with text
+- **Medium**: 18px - Buttons, nav items
+- **Large**: 20px - Headers, CTAs
+- **XL**: 24px - Hero sections, large buttons
+
+### Usage Pattern
+```tsx
+import { Plus, Trash2, Edit } from 'lucide-react'
+
+<Plus size={20} className="text-gray-600" />
+```
+
+### Icon Guidelines
+1. **Consistent sizing** within context
+2. **Color inheritance** - Icons inherit text color
+3. **Stroke width** - Default 2px (Lucide default)
+4. **Accessibility** - Include `aria-label` when icon-only buttons
+
+---
+
+## Styling Approach
+
+### Methodology
+**Utility-First CSS** with Tailwind CSS
+
+### Patterns
+
+#### 1. Use Tailwind Utilities
+```tsx
+// ✅ Good
+<div className="flex items-center gap-4 p-6 bg-white rounded-lg shadow-md">
+
+// ❌ Bad - Custom CSS
+<div className="custom-card">
+```
+
+#### 2. Custom Utilities for Design Tokens
+```tsx
+// Use Tailwind's arbitrary values for brand colors
+className="bg-gradient-to-r from-[#FFA239] to-[#FF5656]"
+```
+
+#### 3. CSS Custom Properties for Dynamic Theming
+```css
+/* In globals.css */
+:root {
+  --brand-primary-orange: #FFA239;
+}
+```
+
+#### 4. Component-Level Styles (Rare)
+Only use component-level styles for:
+- Complex animations
+- CV template-specific styles
+- Third-party component overrides
+
+### Responsive Design
+
+**Breakpoints** (Tailwind defaults):
+- `sm`: 640px
+- `md`: 768px
+- `lg`: 1024px
+- `xl`: 1280px
+- `2xl`: 1536px
+
+**Mobile-First Approach**:
+```tsx
+// Base styles for mobile, then add larger breakpoints
+<div className="flex flex-col md:flex-row lg:gap-8">
+```
+
+### Dark Mode (Future)
+
+CSS custom properties support dark mode:
+```css
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #0a0a0a;
+    --color-foreground-primary: #ededed;
+  }
+}
+```
+
+---
+
+## Project Structure
+
+### Current Organization
+```
+components/
+  ui/          # Base UI components (Button, Card, Input, Label)
+  forms/       # Form components (PersonalForm, ExperienceForm, etc.)
+  templates/   # CV templates (ClassicTemplate, ModernTemplate, etc.)
+  layout/      # Layout components (Header)
+  dashboard/   # Dashboard-specific components (DashboardSidebar)
+  auth/        # Authentication components
+```
+
+### Design System Files
+- `lib/design-tokens.ts` - Token definitions
+- `app/globals.css` - CSS custom properties
+- `.cursor/rules/design_system_rules.mdc` - This document
+
+### Component Naming Conventions
+- **PascalCase** for component files: `Button.tsx`, `Card.tsx`
+- **camelCase** for utilities: `cn()`, `getSpacingClass()`
+- **kebab-case** for CSS classes (handled by Tailwind)
+
+---
+
+## Figma Integration
+
+### Design-to-Code Workflow
+
+1. **Design in Figma** using design tokens
+2. **Export assets** from Figma (images, icons)
+3. **Use Figma MCP tools** to get design context
+4. **Implement components** matching Figma designs
+5. **Use Code Connect** for component mapping
+
+### Figma Design Tokens
+
+**Mapping Figma Variables to CSS**:
+- Figma Color Variables → CSS Custom Properties
+- Figma Typography Styles → Tailwind Typography Classes
+- Figma Spacing → Tailwind Spacing Scale
+
+**Example Mapping**:
+```
+Figma Variable: "Brand/Primary/Orange"
+CSS Variable: --brand-primary-orange
+Tailwind: from-[#FFA239]
+```
+
+### Component Mapping
+
+**Figma Components → React Components**:
+- Figma Button → `components/ui/button.tsx`
+- Figma Card → `components/ui/card.tsx`
+- Figma Input → `components/ui/input.tsx`
+
+### Using Figma MCP Tools
+
+1. **Get Design Context**:
+```typescript
+// Use mcp_Figma_get_design_context to get component code
+// Returns code and asset URLs
+```
+
+2. **Get Screenshots**:
+```typescript
+// Use mcp_Figma_get_screenshot for visual reference
+```
+
+3. **Code Connect Mapping**:
+```typescript
+// Use mcp_Figma_add_code_connect_map to map Figma components
+// to React components
+```
+
+### Best Practices
+
+1. **Maintain Design-Dev Parity**: Keep Figma and code in sync
+2. **Use Design Tokens**: Always reference tokens, not hardcoded values
+3. **Document Changes**: Update this document when design system evolves
+4. **Version Control**: Tag design system versions in Figma
+
+---
+
+## Design Principles (Modern & Minimal)
+
+### 1. Whitespace
+- **Generous spacing** for breathing room
+- Use spacing scale consistently
+- Avoid cramped layouts
+
+### 2. Typography
+- **Clear hierarchy** with consistent type scale
+- Proper line heights for readability
+- Consistent font weights
+
+### 3. Color
+- **Subtle backgrounds** (white, light gray)
+- **Bold accents** only where needed (brand gradient)
+- High contrast for text readability
+
+### 4. Shadows
+- **Subtle elevation** (not heavy shadows)
+- Use brand-tinted shadows for brand elements
+- Consistent shadow levels
+
+### 5. Borders
+- **Light, minimal borders** for separation
+- Consistent border colors (gray-200 default)
+- Rounded corners for modern feel
+
+### 6. Interactions
+- **Smooth, subtle transitions** (200ms default)
+- Active states (scale-95 for buttons)
+- Hover states with color/shadow changes
+
+### 7. Consistency
+- **Same patterns** across all pages
+- Reusable components
+- Predictable behavior
+
+---
+
+## Migration Guide
+
+### Updating Existing Components
+
+1. **Replace hardcoded colors** with design tokens
+2. **Use spacing scale** instead of arbitrary values
+3. **Apply consistent border radius** (rounded-lg for most)
+4. **Add transitions** to interactive elements
+5. **Use semantic color tokens** for text colors
+
+### Example Migration
+
+**Before**:
+```tsx
+<button className="bg-orange-500 text-white px-5 py-3 rounded-md">
+  Create
+</button>
+```
+
+**After**:
+```tsx
+<button className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white px-6 py-3 rounded-lg shadow-md shadow-[#FFA239]/25 transition-all duration-200 hover:shadow-lg active:scale-95">
+  Create
+</button>
+```
+
+---
+
+## Resources
+
+- **Design Tokens**: `lib/design-tokens.ts`
+- **CSS Variables**: `app/globals.css`
+- **Component Library**: `components/ui/`
+- **Figma Integration**: Use MCP Figma tools
+
+---
+
+## Version History
+
+- **v1.0** (2024) - Initial design system implementation
+  - Design tokens defined
+  - UI components standardized
+  - Dashboard redesigned with modern & minimal aesthetic

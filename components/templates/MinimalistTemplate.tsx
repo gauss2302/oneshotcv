@@ -1,6 +1,7 @@
 import React from 'react';
 import { CVState, CVDesignSettings } from '@/types/cv';
 import { TemplateBlock, TemplateGenerator } from './types';
+import { templateColors } from './colors';
 
 export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, settings: CVDesignSettings) => {
   const { personalInfo, education, experience, skills } = data;
@@ -13,7 +14,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
     fontFamily: fontFamily === 'serif' ? 'Georgia, serif' : fontFamily === 'mono' ? 'Courier New, monospace' : 'Arial, Helvetica, sans-serif',
     fontSize: `${0.9 * scale}rem`,
     lineHeight: 1.5,
-    color: '#000000',
+    color: templateColors.textMain,
   };
 
   const sectionHeaderStyle = {

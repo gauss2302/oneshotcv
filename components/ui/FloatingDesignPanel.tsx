@@ -50,10 +50,11 @@ export const FloatingDesignPanel: React.FC = () => {
       <button
         data-design-button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-[#FFA239] to-[#FF5656] hover:from-[#FF5656] hover:to-[#FFA239] text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-[#FFA239] to-[#FF5656] hover:from-[#FF5656] hover:to-[#FFA239] text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 active:scale-95"
         title="Design Tools"
+        aria-label="Open design tools"
       >
-        <Palette size={24} />
+        <Palette size={24} className={isOpen ? "rotate-180 transition-transform duration-200" : "transition-transform duration-200"} />
       </button>
 
       {/* Side Panel - Slides in from right */}

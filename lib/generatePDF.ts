@@ -1,7 +1,34 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { checkSubscriptionStatus } from "./check-subscription";
 
 export const generatePDF = async () => {
+  // Check subscription status before allowing download
+  try {
+    const subscriptionStatus = await checkSubscriptionStatus();
+    if (!subscriptionStatus.hasActiveSubscription) {
+      // Show subscription required message
+      const shouldProceed = window.confirm(
+        "A subscription is required to download your resume as PDF.\n\n" +
+        "Would you like to subscribe now?"
+      );
+      
+      if (shouldProceed) {
+        // Redirect to dashboard with subscription modal
+        window.location.href = "/dashboard?subscription=required";
+        return;
+      }
+      return;
+    }
+  } catch (error) {
+    console.error("Error checking subscription:", error);
+    // If subscription check fails, show error but don't block download in development
+    if (process.env.NODE_ENV === "production") {
+      alert("Unable to verify subscription. Please try again later.");
+      return;
+    }
+  }
+
   // Find all page elements
   const pages = document.querySelectorAll(".cv-page");
   if (pages.length === 0) return;

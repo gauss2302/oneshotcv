@@ -14,6 +14,7 @@ import {
   getProcessingDimensions,
   templateSupportsPhoto,
 } from "@/lib/template-config";
+import { logger } from "@/lib/logger";
 import { v4 as uuidv4 } from "uuid";
 
 export async function POST(req: NextRequest) {
@@ -150,7 +151,10 @@ export async function POST(req: NextRequest) {
       try {
         await deleteFromMinio(existingResumePhoto.processedPath);
       } catch (error) {
-        console.warn("Failed to delete old processed image:", error);
+        logger.warn("Failed to delete old processed image", error instanceof Error ? error : undefined, {
+          resumeId,
+          processedPath: existingResumePhoto.processedPath,
+        });
         // Continue even if deletion fails
       }
 
@@ -198,11 +202,12 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error attaching photo:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
+    logger.error("Error attaching photo", error instanceof Error ? error : undefined, {
+      photoId: body?.photoId,
+      resumeId: body?.resumeId,
+    });
     return NextResponse.json(
-      { error: "Failed to attach photo", details: errorMessage },
+      { error: "Failed to attach photo" },
       { status: 500 }
     );
   }

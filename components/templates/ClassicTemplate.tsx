@@ -2,15 +2,7 @@ import React from "react";
 import { CVState, CVDesignSettings } from "@/types/cv";
 import { TemplateBlock, TemplateGenerator } from "./types";
 import { Mail, Phone, MapPin } from "lucide-react";
-
-const colors = {
-  textMain: "#111827", // gray-900
-  textSec: "#4b5563", // gray-600
-  textMuted: "#6b7280", // gray-500
-  border: "#1f2937", // gray-800
-  borderLight: "#d1d5db", // gray-300
-  bgBadge: "#f3f4f6", // gray-100
-};
+import { templateColors } from "./colors";
 
 export const getClassicTemplateBlocks: TemplateGenerator = (
   data: CVState,
@@ -30,7 +22,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
         : "ui-sans-serif, system-ui, sans-serif",
     fontSize: `${0.9 * scale}rem`, // Reduced base size + scale
     lineHeight: 1.5,
-    color: "#1f2937", // gray-800
+    color: templateColors.textMain, // gray-900
   };
 
   const headerStyle = {

@@ -1,13 +1,31 @@
-import React from "react";
+import React, { memo, useEffect, useState } from "react";
 import { useCVStore } from "@/store/useCVStore";
-import { Cloud, CloudOff, Loader2, Check } from "lucide-react";
+import { Cloud, CloudOff, Loader2, Check, AlertCircle } from "lucide-react";
 
-export const SaveIndicator: React.FC = () => {
+export const SaveIndicator: React.FC = memo(() => {
   const { isSaving, hasUnsavedChanges, lastSavedAt, isLoading } = useCVStore();
+  const [timeAgo, setTimeAgo] = useState<string>("");
+
+  // Update time ago in real-time
+  useEffect(() => {
+    if (!lastSavedAt) {
+      setTimeAgo("");
+      return;
+    }
+
+    const updateTimeAgo = () => {
+      setTimeAgo(getTimeAgo(lastSavedAt));
+    };
+
+    updateTimeAgo();
+    const interval = setInterval(updateTimeAgo, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastSavedAt]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center gap-2 text-gray-400 text-sm">
+      <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in duration-200">
         <Loader2 size={16} className="animate-spin" />
         <span>Loading...</span>
       </div>
@@ -16,39 +34,39 @@ export const SaveIndicator: React.FC = () => {
 
   if (isSaving) {
     return (
-      <div className="flex items-center gap-2 text-blue-500 text-sm">
+      <div className="flex items-center gap-2 text-blue-500 text-sm animate-in fade-in duration-200">
         <Loader2 size={16} className="animate-spin" />
-        <span>Saving...</span>
+        <span className="font-medium">Saving...</span>
       </div>
     );
   }
 
   if (hasUnsavedChanges) {
     return (
-      <div className="flex items-center gap-2 text-amber-500 text-sm">
-        <CloudOff size={16} />
-        <span>Unsaved changes</span>
+      <div className="flex items-center gap-2 text-amber-500 text-sm animate-in fade-in duration-200">
+        <CloudOff size={16} className="animate-pulse" />
+        <span className="font-medium">Unsaved changes</span>
       </div>
     );
   }
 
-  if (lastSavedAt) {
-    const timeAgo = getTimeAgo(lastSavedAt);
+  if (lastSavedAt && timeAgo) {
     return (
-      <div className="flex items-center gap-2 text-green-600 text-sm">
-        <Check size={16} />
-        <span>Saved {timeAgo}</span>
+      <div className="flex items-center gap-2 text-green-600 text-sm animate-in fade-in duration-200">
+        <Check size={16} className="text-green-600" />
+        <span className="font-medium">Saved {timeAgo}</span>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 text-gray-400 text-sm">
+    <div className="flex items-center gap-2 text-gray-400 text-sm animate-in fade-in duration-200">
       <Cloud size={16} />
       <span>All changes saved</span>
     </div>
   );
-};
+});
+SaveIndicator.displayName = 'SaveIndicator';
 
 function getTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -60,5 +78,8 @@ function getTimeAgo(date: Date): string {
   if (minutes < 60) return `${minutes}m ago`;
 
   const hours = Math.floor(minutes / 60);
-  return `${hours}h ago`;
+  if (hours < 24) return `${hours}h ago`;
+
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
 }
