@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { db } from "@/db";
 import { polarSubscriptions } from "@/db/schema";
-import { eq, and, gt, or } from "drizzle-orm";
+import { eq, and, gt, or, isNull } from "drizzle-orm";
 import { logger } from "@/lib/logger";
 
 /**
@@ -29,9 +29,9 @@ export async function GET() {
         eq(polarSubscriptions.userId, session.user.id),
         eq(polarSubscriptions.status, "active"),
         or(
-          gt(polarSubscriptions.currentPeriodEnd ?? new Date(0), new Date()),
+          gt(polarSubscriptions.currentPeriodEnd, new Date()),
           // Also include subscriptions without period end (lifetime)
-          eq(polarSubscriptions.currentPeriodEnd, null)
+          isNull(polarSubscriptions.currentPeriodEnd)
         )
       ),
       orderBy: (subscriptions, { desc }) => [desc(subscriptions.createdAt)],
