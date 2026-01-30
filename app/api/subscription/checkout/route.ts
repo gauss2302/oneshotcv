@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
     const successUrl = `${baseUrl}/dashboard?subscription=success`;
 
     // Create checkout session
-    const result = await polar.checkouts.create({
+    const checkout = await polar.checkouts.create({
       products: [productPriceId],
       successUrl,
       customerEmail: session.user.email,
@@ -60,19 +60,6 @@ export async function POST(req: NextRequest) {
         userEmail: session.user.email,
       },
     });
-
-    if (!result.ok) {
-      logger.error("Failed to create Polar checkout session", {
-        error: result.error,
-        userId: session.user.id,
-      });
-      return NextResponse.json(
-        { error: "Failed to create checkout session" },
-        { status: 500 }
-      );
-    }
-
-    const checkout = result.value;
 
     return NextResponse.json({
       checkoutUrl: checkout.url,
