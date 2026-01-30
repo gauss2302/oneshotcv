@@ -48,13 +48,11 @@ export async function POST(req: NextRequest) {
 
     const baseUrl = getEnvVar("NEXT_PUBLIC_APP_URL");
     const successUrl = `${baseUrl}/dashboard?subscription=success`;
-    const returnUrl = `${baseUrl}/dashboard`;
 
     // Create checkout session
     const result = await polar.checkouts.create({
-      productPriceId,
+      products: [productPriceId],
       successUrl,
-      returnUrl,
       customerEmail: session.user.email,
       customerName: session.user.name || undefined,
       metadata: {
