@@ -1,6 +1,7 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { checkSubscriptionStatus } from "./check-subscription";
+import { logger } from "@/lib/logger";
 
 export const generatePDF = async () => {
   // Check subscription status before allowing download
@@ -21,12 +22,12 @@ export const generatePDF = async () => {
       return;
     }
   } catch (error) {
-    console.error("Error checking subscription:", error);
-    // If subscription check fails, show error but don't block download in development
-    if (process.env.NODE_ENV === "production") {
-      alert("Unable to verify subscription. Please try again later.");
-      return;
-    }
+    logger.error(
+      "Error checking subscription",
+      error instanceof Error ? error : undefined
+    );
+    alert("Unable to verify subscription. Please try again later.");
+    return;
   }
 
   // Find all page elements
@@ -587,7 +588,10 @@ export const generatePDF = async () => {
 
     pdf.save("my-cv.pdf");
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    logger.error(
+      "Error generating PDF",
+      error instanceof Error ? error : undefined
+    );
     alert("Failed to generate PDF. Please try again.");
   }
 };

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useCVStore } from "@/store/useCVStore";
 import { authClient } from "@/lib/auth/auth-client";
 import { useSearchParams } from "next/navigation";
+import { logger } from "@/lib/logger";
 
 const SAVE_DEBOUNCE_MS = 1500;
 
@@ -110,11 +111,16 @@ export function useResumeSync() {
             lastLoadedResumeId.current = createData.id;
           }
         } else {
-          console.warn("Resume not found for id:", resumeIdFromUrl);
+          logger.warn("Resume not found for id", {
+            resumeId: resumeIdFromUrl,
+          });
         }
       } catch (error) {
         if (!isCancelled) {
-          console.error("Failed to load resume:", error);
+          logger.error(
+            "Failed to load resume",
+            error instanceof Error ? error : undefined
+          );
         }
       } finally {
         if (!isCancelled) {
@@ -146,10 +152,6 @@ export function useResumeSync() {
       // Verify we're still on the same resume
       const currentResumeId = useCVStore.getState().resumeId;
       if (currentResumeId !== targetResumeId) {
-        console.log("Skipping save - resume changed", {
-          targetResumeId,
-          currentResumeId,
-        });
         return;
       }
 
@@ -187,7 +189,10 @@ export function useResumeSync() {
           setSaved();
         }
       } catch (error) {
-        console.error("Failed to save resume:", error);
+        logger.error(
+          "Failed to save resume",
+          error instanceof Error ? error : undefined
+        );
       } finally {
         isSyncing.current = false;
         setIsSaving(false);
@@ -261,7 +266,12 @@ export function useResumeSync() {
               designSettings: state.designSettings,
             },
           }),
-        }).catch(console.error);
+        }).catch((error) => {
+          logger.error(
+            "Failed to save resume on cleanup",
+            error instanceof Error ? error : undefined
+          );
+        });
       }
     };
   }, [cancelPendingSave]);

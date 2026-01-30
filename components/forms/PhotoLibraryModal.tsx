@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { logger } from "@/lib/logger";
 
 interface LibraryPhoto {
   id: string;
@@ -41,7 +42,10 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
       const data = await response.json();
       setPhotos(data.photos);
     } catch (err) {
-      console.error('Error loading photos:', err);
+      logger.error(
+        "Error loading photos",
+        err instanceof Error ? err : undefined
+      );
       setError('Failed to load your photo library');
     } finally {
       setLoading(false);

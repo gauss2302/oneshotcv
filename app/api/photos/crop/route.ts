@@ -11,6 +11,7 @@ import {
   deleteFromMinio,
 } from "@/lib/minio";
 import { getProcessingDimensions } from "@/lib/template-config";
+import { logger } from "@/lib/logger";
 
 export async function POST(req: NextRequest) {
   try {
@@ -60,9 +61,11 @@ export async function POST(req: NextRequest) {
     try {
       await deleteFromMinio(resumePhoto.resumePhoto.processedPath);
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("Failed to delete old processed image:", error);
-      }
+      logger.warn(
+        "Failed to delete old processed image",
+        { resumePhotoId, processedPath: resumePhoto.resumePhoto.processedPath },
+        error instanceof Error ? error : undefined
+      );
       // Continue even if deletion fails
     }
 
@@ -100,9 +103,10 @@ export async function POST(req: NextRequest) {
       cropData,
     });
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("Error re-cropping photo:", error);
-    }
+    logger.error(
+      "Error re-cropping photo",
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       { error: "Failed to update crop" },
       { status: 500 }

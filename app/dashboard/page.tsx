@@ -11,6 +11,7 @@ import { authClient } from "@/lib/auth/auth-client";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus";
 import { SubscriptionModal } from "@/components/subscription/SubscriptionModal";
+import { logger } from "@/lib/logger";
 
 interface ResumeVersion {
   id: string;
@@ -67,7 +68,10 @@ export default function Dashboard() {
       setVersions(data.resumes ?? []);
       setSelectedVersionId(selectedId ?? data.resumes?.[0]?.id ?? null);
     } catch (error) {
-      console.error("Failed to load resumes", error);
+      logger.error(
+        "Failed to load resumes",
+        error instanceof Error ? error : undefined
+      );
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +126,10 @@ export default function Dashboard() {
           setShowOnboarding(true);
         }
       } catch (error) {
-        console.error("Failed to check onboarding status:", error);
+        logger.error(
+          "Failed to check onboarding status",
+          error instanceof Error ? error : undefined
+        );
         // On error, show onboarding (better UX for new users)
         setShowOnboarding(true);
       } finally {
@@ -191,7 +198,10 @@ export default function Dashboard() {
         await fetchVersions(result.id);
         router.push(`/editor?resumeId=${result.id}`);
       } catch (error) {
-        console.error(error);
+        logger.error(
+          "Failed to create resume",
+          error instanceof Error ? error : undefined
+        );
       } finally {
         setIsCreating(false);
       }
@@ -217,7 +227,10 @@ export default function Dashboard() {
         resumeToDelete.id === selectedVersionId ? null : selectedVersionId;
       await fetchVersions(nextSelected);
     } catch (error) {
-      console.error(error);
+      logger.error(
+        "Failed to delete resume",
+        error instanceof Error ? error : undefined
+      );
     } finally {
       setIsDeleting(false);
       setResumeToDelete(null);

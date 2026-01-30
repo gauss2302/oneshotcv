@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Check, Download, Sparkles } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -46,7 +47,10 @@ export function SubscriptionModal({
         window.location.href = data.checkoutUrl;
       }
     } catch (error) {
-      console.error("Error creating checkout:", error);
+      logger.error(
+        "Error creating checkout",
+        error instanceof Error ? error : undefined
+      );
       alert("Failed to start checkout. Please try again.");
       setIsCreatingCheckout(false);
     }

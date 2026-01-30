@@ -18,6 +18,7 @@ import {
   Sparkles,
   FolderOpen,
 } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,7 +61,10 @@ export default function ProfilePage() {
         const data = await res.json();
         setResumes(data.resumes ?? []);
       } catch (error) {
-        console.error("Failed to fetch resumes:", error);
+        logger.error(
+          "Failed to fetch resumes",
+          error instanceof Error ? error : undefined
+        );
       } finally {
         setLoadingResumes(false);
       }
@@ -77,7 +81,10 @@ export default function ProfilePage() {
         const data = await res.json();
         setPhotos(data.photos ?? []);
       } catch (error) {
-        console.error("Failed to fetch photos:", error);
+        logger.error(
+          "Failed to fetch photos",
+          error instanceof Error ? error : undefined
+        );
       } finally {
         setLoadingPhotos(false);
       }
@@ -128,7 +135,10 @@ export default function ProfilePage() {
         }
       }
     } catch (error) {
-      console.error("Failed to delete photo:", error);
+      logger.error(
+        "Failed to delete photo",
+        error instanceof Error ? error : undefined
+      );
     } finally {
       setDeletingPhotoId(null);
     }

@@ -1,5 +1,6 @@
 import { Client } from 'minio';
 import sharp from 'sharp';
+import { logger } from "@/lib/logger";
 
 // Lazy initialization to prevent build-time errors when env vars are not available
 let minioClient: Client | null = null;
@@ -59,9 +60,7 @@ export async function ensureBucket(): Promise<void> {
     const exists = await client.bucketExists(bucketName);
     if (!exists) {
       await client.makeBucket(bucketName, 'us-east-1');
-      if (process.env.NODE_ENV === "development") {
-        console.log(`MinIO bucket "${bucketName}" created`);
-      }
+      logger.info(`MinIO bucket "${bucketName}" created`);
     }
 
     // Always ensure the policy is set correctly (for both new and existing buckets)
@@ -84,13 +83,14 @@ export async function ensureBucket(): Promise<void> {
     };
 
     await client.setBucketPolicy(bucketName, JSON.stringify(policy));
-    if (process.env.NODE_ENV === "development") {
-      console.log(`MinIO bucket "${bucketName}" policy updated - public access enabled for originals and processed folders`);
-    }
+    logger.info(
+      `MinIO bucket "${bucketName}" policy updated - public access enabled for originals and processed folders`
+    );
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error('Error ensuring MinIO bucket:', error);
-    }
+    logger.error(
+      "Error ensuring MinIO bucket",
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -112,9 +112,10 @@ export async function uploadToMinio(
 
     return path;
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error('Error uploading to MinIO:', error);
-    }
+    logger.error(
+      "Error uploading to MinIO",
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -178,9 +179,10 @@ export async function processImage(
       height: metadata.height!,
     };
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error('Error processing image:', error);
-    }
+    logger.error(
+      "Error processing image",
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -191,9 +193,10 @@ export async function deleteFromMinio(path: string): Promise<void> {
     const bucketName = getBucketName();
     await client.removeObject(bucketName, path);
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error('Error deleting from MinIO:', error);
-    }
+    logger.error(
+      "Error deleting from MinIO",
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -211,9 +214,10 @@ export async function getFromMinio(path: string): Promise<Buffer> {
       stream.on('error', reject);
     });
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error('Error getting from MinIO:', error);
-    }
+    logger.error(
+      "Error getting from MinIO",
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }
@@ -231,9 +235,10 @@ export async function validateImageDimensions(
 
     return { width, height, isValid };
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error('Error validating image dimensions:', error);
-    }
+    logger.error(
+      "Error validating image dimensions",
+      error instanceof Error ? error : undefined
+    );
     throw error;
   }
 }

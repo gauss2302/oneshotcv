@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Github, Linkedin, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { logger } from "@/lib/logger";
 
 export function SignUp() {
     const [name, setName] = useState("");
@@ -41,8 +42,12 @@ export function SignUp() {
                 router.push("/dashboard");
             },
             onError: (ctx) => {
-                console.error("Social sign-in error:", ctx);
-                alert(ctx.error.message || "An error occurred during sign-in. Please check the console for details.");
+                logger.error(
+                  "Social sign-in error",
+                  ctx.error instanceof Error ? ctx.error : undefined,
+                  { error: ctx.error }
+                );
+                alert(ctx.error.message || "An error occurred during sign-in.");
             }
         });
     }

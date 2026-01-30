@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool, PoolConfig } from 'pg';
 
 import * as schema from "./schema";
+import { logger } from "@/lib/logger";
 
 // Connection pool configuration for production
 const poolConfig: PoolConfig = {
@@ -18,7 +19,7 @@ const pool = new Pool(poolConfig);
 
 // Handle pool errors
 pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
+  logger.error('Unexpected error on idle client', err);
   // In production, you might want to send this to your error tracking service
 });
 
@@ -30,7 +31,10 @@ export async function checkDatabaseHealth(): Promise<boolean> {
     client.release();
     return true;
   } catch (error) {
-    console.error('Database health check failed:', error);
+    logger.error(
+      "Database health check failed",
+      error instanceof Error ? error : undefined
+    );
     return false;
   }
 }

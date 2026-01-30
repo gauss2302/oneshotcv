@@ -5,11 +5,13 @@ import { db } from "@/db";
 import { photos, resumePhotos } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteFromMinio } from "@/lib/minio";
+import { logger } from "@/lib/logger";
 
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  let photoId: string | undefined;
   try {
     const session = await auth.api.getSession({
       headers: await headers()
@@ -19,7 +21,8 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: photoId } = await params;
+    const { id } = await params;
+    photoId = id;
     const userId = session.user.id;
     const url = new URL(req.url);
     const force = url.searchParams.get('force') === 'true';
@@ -62,9 +65,14 @@ export async function DELETE(
         try {
           await deleteFromMinio(usage.processedPath);
         } catch (error) {
-          if (process.env.NODE_ENV === "development") {
-            console.warn("Failed to delete processed image:", error);
-          }
+          logger.warn(
+            "Failed to delete processed image",
+            {
+              photoId,
+              processedPath: usage.processedPath,
+            },
+            error instanceof Error ? error : undefined
+          );
         }
       }
       await db.delete(resumePhotos).where(eq(resumePhotos.photoId, photoId));
@@ -74,9 +82,11 @@ export async function DELETE(
     try {
       await deleteFromMinio(photo.originalPath);
     } catch (error) {
-      if (process.env.NODE_ENV === "development") {
-        console.warn("Failed to delete original image from MinIO:", error);
-      }
+      logger.warn(
+        "Failed to delete original image from MinIO",
+        { photoId, originalPath: photo.originalPath },
+        error instanceof Error ? error : undefined
+      );
       // Continue even if deletion fails
     }
 
@@ -89,9 +99,11 @@ export async function DELETE(
     });
 
   } catch (error) {
-    if (process.env.NODE_ENV === "development") {
-      console.error("Error deleting photo:", error);
-    }
+      logger.error(
+        "Error deleting photo",
+        error instanceof Error ? error : undefined,
+        { photoId }
+      );
     return NextResponse.json(
       { error: "Failed to delete photo" },
       { status: 500 }

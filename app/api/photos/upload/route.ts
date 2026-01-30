@@ -13,6 +13,7 @@ import {
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit";
 import { v4 as uuidv4 } from "uuid";
 import { eq, count } from "drizzle-orm";
+import { logger } from "@/lib/logger";
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -149,10 +150,10 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    // Log error details in development, sanitize in production
-    if (process.env.NODE_ENV === "development") {
-      console.error("Photo upload error:", error);
-    }
+    logger.error(
+      "Photo upload error",
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       { error: "Upload failed. Please try again." },
       { status: 500 }

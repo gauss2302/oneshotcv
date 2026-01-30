@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X } from "lucide-react";
+import { logger } from "@/lib/logger";
 import { OnboardingStep1 } from "./OnboardingStep1";
 import { OnboardingStep2 } from "./OnboardingStep2";
 import { OnboardingStep3 } from "./OnboardingStep3";
@@ -81,7 +82,10 @@ export function OnboardingModal({
         method: "POST",
       });
     } catch (error) {
-      console.error("Failed to update onboarding status:", error);
+      logger.error(
+        "Failed to update onboarding status",
+        error instanceof Error ? error : undefined
+      );
       // Continue anyway - localStorage is updated
     }
 
@@ -98,7 +102,10 @@ export function OnboardingModal({
         method: "POST",
       });
     } catch (error) {
-      console.error("Failed to update onboarding status:", error);
+      logger.error(
+        "Failed to update onboarding status",
+        error instanceof Error ? error : undefined
+      );
       // Continue anyway - localStorage is updated
     }
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { logger } from "@/lib/logger";
 
 // Environment variable schema
 const envSchema = z.object({
@@ -57,7 +58,7 @@ export function getEnv(): Env {
   const result = envSchema.safeParse(process.env);
 
   if (!result.success) {
-    const errors = result.error.errors.map((err) => {
+    const errors = result.error.issues.map((err) => {
       return `${err.path.join(".")}: ${err.message}`;
     });
 
@@ -84,8 +85,10 @@ if (process.env.NODE_ENV === "production") {
   try {
     getEnv();
   } catch (error) {
-    console.error("FATAL: Environment validation failed on startup");
-    console.error(error);
+    logger.error(
+      "FATAL: Environment validation failed on startup",
+      error instanceof Error ? error : undefined
+    );
     process.exit(1);
   }
 }

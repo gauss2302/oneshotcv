@@ -3,10 +3,8 @@
 import React, { useState, useCallback } from "react";
 import Cropper, { Area } from "react-easy-crop";
 import { X, Check, Loader2 } from "lucide-react";
-
-// Mock functions for demo
-const getPhotoAspectRatio = (templateId: string) => 1;
-const getPhotoFrameSize = (templateId: string) => ({ width: 400, height: 400 });
+import { getPhotoAspectRatio, getPhotoFrameSize } from "@/lib/template-config";
+import { logger } from "@/lib/logger";
 
 interface PhotoCropModalProps {
   imageUrl: string;
@@ -63,7 +61,10 @@ export const PhotoCropModal: React.FC<PhotoCropModalProps> = ({
         zoom,
       });
     } catch (error) {
-      console.error("Error saving crop:", error);
+      logger.error(
+        "Error saving crop",
+        error instanceof Error ? error : undefined
+      );
     } finally {
       setSaving(false);
     }
@@ -161,33 +162,3 @@ export const PhotoCropModal: React.FC<PhotoCropModalProps> = ({
     </div>
   );
 };
-
-// Demo
-export default function Demo() {
-  const [showModal, setShowModal] = useState(true);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center p-4">
-      <button
-        onClick={() => setShowModal(true)}
-        className="px-6 py-3 bg-gray-900 text-white rounded-md hover:bg-gray-800 transition-colors"
-      >
-        Open Crop Modal
-      </button>
-
-      {showModal && (
-        <PhotoCropModal
-          imageUrl="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800"
-          onSave={async (cropData) => {
-            console.log("Saved crop:", cropData);
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            setShowModal(false);
-          }}
-          onCancel={() => setShowModal(false)}
-          templateId="professional"
-          initialCropData={{ x: 0, y: 0, width: 400, height: 400, zoom: 1 }}
-        />
-      )}
-    </div>
-  );
-}

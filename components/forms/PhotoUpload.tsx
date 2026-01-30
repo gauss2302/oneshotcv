@@ -6,6 +6,7 @@ import { useCVStore } from "@/store/useCVStore";
 import { PhotoCropModal } from "./PhotoCropModal";
 import { PhotoLibraryModal } from "./PhotoLibraryModal";
 import { templateSupportsPhoto } from "@/lib/template-config";
+import { logger } from "@/lib/logger";
 
 interface LibraryPhoto {
   id: string;
@@ -105,7 +106,10 @@ export const PhotoUpload: React.FC = () => {
       });
       setShowCropper(true);
     } catch (error) {
-      console.error("Upload error:", error);
+      logger.error(
+        "Upload error",
+        error instanceof Error ? error : undefined
+      );
       const message = getErrorMessage(error);
       showStatus("error", message || "Failed to upload photo");
     } finally {
@@ -181,7 +185,10 @@ export const PhotoUpload: React.FC = () => {
       resetTempState();
       showStatus("success", "Photo updated successfully.");
     } catch (error) {
-      console.error("Error attaching photo:", error);
+      logger.error(
+        "Error attaching photo",
+        error instanceof Error ? error : undefined
+      );
       showStatus("error", "Failed to attach photo. Please try again.");
     }
   };
@@ -224,7 +231,10 @@ export const PhotoUpload: React.FC = () => {
       resetTempState();
       showStatus("success", "Photo removed from resume.");
     } catch (error) {
-      console.error("Remove error:", error);
+      logger.error(
+        "Remove error",
+        error instanceof Error ? error : undefined
+      );
       showStatus("error", "Failed to remove photo. Please try again.");
     } finally {
       setRemoving(false);

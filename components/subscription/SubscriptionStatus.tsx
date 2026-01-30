@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface SubscriptionStatusProps {
   className?: string;
@@ -32,7 +33,10 @@ export function SubscriptionStatus({ className = "" }: SubscriptionStatusProps) 
           setSubscription(data);
         }
       } catch (error) {
-        console.error("Failed to fetch subscription status:", error);
+        logger.error(
+          "Failed to fetch subscription status",
+          error instanceof Error ? error : undefined
+        );
       } finally {
         setIsLoading(false);
       }

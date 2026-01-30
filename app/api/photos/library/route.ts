@@ -5,6 +5,7 @@ import { db } from "@/db";
 import { photos } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getPublicUrl } from "@/lib/minio";
+import { logger } from "@/lib/logger";
 
 export async function GET() {
   try {
@@ -18,16 +19,12 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    console.log("[Photo Library] Fetching photos for user:", userId);
-
     // Get all active photos for the user, newest first
     const userPhotos = await db
       .select()
       .from(photos)
       .where(eq(photos.userId, userId))
       .orderBy(desc(photos.createdAt));
-
-    console.log("[Photo Library] Found", userPhotos.length, "photos");
 
     // Return photos with original URLs for thumbnails
     const photosWithUrls = userPhotos.map(photo => ({
@@ -40,18 +37,16 @@ export async function GET() {
       createdAt: photo.createdAt,
     }));
 
-    console.log("[Photo Library] Sample photo URLs:", photosWithUrls.slice(0, 2).map(p => ({
-      id: p.id,
-      url: p.originalUrl
-    })));
-
     return NextResponse.json({
       success: true,
       photos: photosWithUrls,
     });
 
   } catch (error) {
-    console.error("Error fetching photo library:", error);
+    logger.error(
+      "Error fetching photo library",
+      error instanceof Error ? error : undefined
+    );
     return NextResponse.json(
       { error: "Failed to fetch photos" },
       { status: 500 }
