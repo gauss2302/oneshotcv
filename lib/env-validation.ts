@@ -80,8 +80,11 @@ export function getEnvVar<K extends keyof Env>(key: K): Env[K] {
   return env[key];
 }
 
-// Validate on module load in production
-if (process.env.NODE_ENV === "production") {
+// Validate on module load in production (skip during Next.js build)
+if (
+  process.env.NODE_ENV === "production" &&
+  process.env.NEXT_PHASE !== "phase-production-build"
+) {
   try {
     getEnv();
   } catch (error) {

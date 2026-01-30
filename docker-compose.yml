@@ -9,6 +9,8 @@ services:
       - "3000:3000"
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
       - MINIO_ENDPOINT=minio
       - MINIO_PORT=9000
