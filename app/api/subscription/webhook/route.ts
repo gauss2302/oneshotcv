@@ -80,10 +80,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    logger.error("Error processing webhook", {
-      error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    logger.error("Error processing webhook", error instanceof Error ? error : undefined);
 
     return NextResponse.json(
       { error: "Internal server error" },

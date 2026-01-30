@@ -66,9 +66,7 @@ export async function POST(req: NextRequest) {
       checkoutId: checkout.id,
     });
   } catch (error) {
-    logger.error("Error creating checkout session", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    logger.error("Error creating checkout session", error instanceof Error ? error : undefined);
 
     return NextResponse.json(
       { error: "Internal server error" },

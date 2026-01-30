@@ -51,9 +51,7 @@ export async function GET() {
         : null,
     });
   } catch (error) {
-    logger.error("Error checking subscription status", {
-      error: error instanceof Error ? error.message : String(error),
-    });
+    logger.error("Error checking subscription status", error instanceof Error ? error : undefined);
 
     return NextResponse.json(
       { error: "Internal server error" },
