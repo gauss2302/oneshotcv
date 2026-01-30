@@ -151,10 +151,10 @@ export async function POST(req: NextRequest) {
       try {
         await deleteFromMinio(existingResumePhoto.processedPath);
       } catch (error) {
-        logger.warn("Failed to delete old processed image", error instanceof Error ? error : undefined, {
+        logger.warn("Failed to delete old processed image", {
           resumeId,
           processedPath: existingResumePhoto.processedPath,
-        });
+        }, error instanceof Error ? error : undefined);
         // Continue even if deletion fails
       }
 
@@ -202,10 +202,7 @@ export async function POST(req: NextRequest) {
       },
     });
   } catch (error) {
-    logger.error("Error attaching photo", error instanceof Error ? error : undefined, {
-      photoId: body?.photoId,
-      resumeId: body?.resumeId,
-    });
+    logger.error("Error attaching photo", error instanceof Error ? error : undefined);
     return NextResponse.json(
       { error: "Failed to attach photo" },
       { status: 500 }
