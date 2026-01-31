@@ -54,6 +54,10 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Migrations: run before app start so production DB has auth tables (user, session, account, verification)
+COPY --from=builder --chown=nextjs:nextjs /app/drizzle ./drizzle
+COPY --from=builder --chown=nextjs:nextjs /app/scripts ./scripts
+
 USER nextjs
 
 EXPOSE 3000
@@ -68,4 +72,5 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD ["node", "server.js"]
+# Run migrations first so the DB has auth tables, then start the app
+CMD ["sh", "-c", "node scripts/migrate.mjs && exec node server.js"]
