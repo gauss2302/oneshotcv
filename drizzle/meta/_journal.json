@@ -8,6 +8,13 @@
       "when": 1764402650331,
       "tag": "0000_mysterious_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1738342800000,
+      "tag": "0001_add_user_has_completed_onboarding",
+      "breakpoints": true
     }
   ]
 }
