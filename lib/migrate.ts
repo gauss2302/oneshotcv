@@ -12,7 +12,6 @@ import { Pool } from "pg";
 export async function runMigrations(): Promise<void> {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.log("[migrate] DATABASE_URL not set, skipping migrations.");
     return;
   }
 
@@ -23,10 +22,8 @@ export async function runMigrations(): Promise<void> {
     // In Docker standalone: cwd is /app, we copy drizzle to /app/drizzle
     const migrationsFolder = path.join(process.cwd(), "drizzle");
     await migrate(db, { migrationsFolder });
-    console.log("[migrate] Migrations completed.");
-  } catch (err) {
-    console.error("[migrate] Migration failed:", err);
-    throw err;
+  } catch (error) {
+    throw error;
   } finally {
     await pool.end();
   }

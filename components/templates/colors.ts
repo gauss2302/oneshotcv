@@ -19,9 +19,9 @@ export const templateColors = {
   textMuted: designTokens.foreground.tertiary,   // #6b7280 (gray-500)
   
   // Border colors
-  border: designTokens.foreground.primary,       // #111827 (gray-900) - Dark borders
-  borderLight: designTokens.border.default,      // #e5e7eb (gray-200) - Light borders
-  borderMedium: designTokens.border.medium,       // #d1d5db (gray-300) - Medium borders
+  border: designTokens.foreground.primary,       // #111827 - Dark borders
+  borderLight: designTokens.borderColors.default, // #E6E8EC - Light borders
+  borderMedium: designTokens.borderColors.medium, // #d1d5db - Medium borders
   
   // Background colors
   bgBadge: designTokens.background.tertiary,      // #f3f4f6 (gray-100)

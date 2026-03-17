@@ -3,14 +3,6 @@ import { CVState, CVDesignSettings } from '@/types/cv';
 import { TemplateBlock, TemplateGenerator } from './types';
 import { Mail, Phone, MapPin } from 'lucide-react';
 
-const colors = {
-  headerBg: '#2c3e50', // dark blue
-  headerText: '#ffffff',
-  mainText: '#2c3e50',
-  secText: '#7f8c8d',
-  accent: '#e74c3c', // red
-};
-
 export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, settings: CVDesignSettings) => {
   const { personalInfo, education, experience, skills } = data;
   const { themeColor, fontFamily, scale } = settings;

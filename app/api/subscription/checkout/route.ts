@@ -1,4 +1,4 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
 import { getPolarClient, isPolarConfigured } from "@/lib/polar";
@@ -9,7 +9,7 @@ import { logger } from "@/lib/logger";
  * POST /api/subscription/checkout
  * Create a Polar checkout session for subscription
  */
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     if (!isPolarConfigured()) {
       return NextResponse.json(

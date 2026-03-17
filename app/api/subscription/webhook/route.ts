@@ -1,10 +1,33 @@
 import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/db";
-import { polarCustomers, polarSubscriptions } from "@/db/schema";
+import { polarCustomers, polarSubscriptions, user } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { getEnvVar } from "@/lib/env-validation";
 import { logger } from "@/lib/logger";
-import crypto from "crypto";
+import {
+  validateEvent,
+  WebhookVerificationError,
+} from "@polar-sh/sdk/webhooks";
+
+type PolarWebhookEvent = ReturnType<typeof validateEvent>;
+type CheckoutEvent = Extract<
+  PolarWebhookEvent,
+  { type: "checkout.created" | "checkout.updated" }
+>;
+type SubscriptionEvent = Extract<
+  PolarWebhookEvent,
+  {
+    type:
+      | "subscription.active"
+      | "subscription.created"
+      | "subscription.updated"
+      | "subscription.canceled";
+  }
+>;
+type CustomerEvent = Extract<
+  PolarWebhookEvent,
+  { type: "customer.created" | "customer.updated" }
+>;
 
 /**
  * POST /api/subscription/webhook
@@ -21,66 +44,56 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Verify webhook signature
-    const signature = req.headers.get("x-polar-signature");
-    const timestamp = req.headers.get("x-polar-timestamp");
-
-    if (!signature || !timestamp) {
-      return NextResponse.json(
-        { error: "Missing webhook signature" },
-        { status: 401 }
-      );
-    }
-
     const body = await req.text();
-    const expectedSignature = crypto
-      .createHmac("sha256", webhookSecret)
-      .update(`${timestamp}.${body}`)
-      .digest("hex");
+    const headersMap = Object.fromEntries(req.headers.entries());
 
-    if (signature !== expectedSignature) {
-      logger.warn("Invalid webhook signature", {
-        received: signature.substring(0, 10) + "...",
-        expected: expectedSignature.substring(0, 10) + "...",
-      });
-      return NextResponse.json(
-        { error: "Invalid signature" },
-        { status: 401 }
-      );
+    let event: PolarWebhookEvent;
+    try {
+      event = validateEvent(body, headersMap, webhookSecret);
+    } catch (error) {
+      if (error instanceof WebhookVerificationError) {
+        logger.warn("Invalid webhook signature");
+        return NextResponse.json({ error: "Invalid signature" }, { status: 401 });
+      }
+      throw error;
     }
 
-    const payload = JSON.parse(body);
-    const { type, data } = payload;
+    logger.info("Received Polar webhook", {
+      type: event.type,
+      eventId: event.data?.id,
+    });
 
-    logger.info("Received Polar webhook", { type, eventId: data?.id });
-
-    // Handle different webhook event types
-    switch (type) {
-      case "checkout.completed": {
-        await handleCheckoutCompleted(data);
+    switch (event.type) {
+      case "checkout.created":
+      case "checkout.updated": {
+        await handleCheckoutEvent(event.data);
         break;
       }
+      case "subscription.active":
       case "subscription.created":
       case "subscription.updated": {
-        await handleSubscriptionUpdated(data);
+        await upsertSubscription(event.data);
         break;
       }
       case "subscription.canceled": {
-        await handleSubscriptionCanceled(data);
+        await upsertSubscription(event.data, "canceled");
         break;
       }
       case "customer.created":
       case "customer.updated": {
-        await handleCustomerUpdated(data);
+        await handleCustomerUpdated(event.data);
         break;
       }
       default:
-        logger.info("Unhandled webhook event type", { type });
+        logger.info("Unhandled webhook event type", { type: event.type });
     }
 
     return NextResponse.json({ received: true });
   } catch (error) {
-    logger.error("Error processing webhook", error instanceof Error ? error : undefined);
+    logger.error(
+      "Error processing webhook",
+      error instanceof Error ? error : undefined
+    );
 
     return NextResponse.json(
       { error: "Internal server error" },
@@ -89,91 +102,83 @@ export async function POST(req: NextRequest) {
   }
 }
 
-/**
- * Handle checkout.completed event
- */
-async function handleCheckoutCompleted(data: any) {
-  const { customerId, customerEmail, customerExternalId, metadata } = data;
+async function handleCheckoutEvent(data: CheckoutEvent["data"]) {
+  const customerId = data.customerId;
+  if (!customerId) {
+    return;
+  }
 
-  if (!customerExternalId && !metadata?.userId) {
+  if (data.status !== "confirmed" && data.status !== "succeeded") {
+    return;
+  }
+
+  const userId = getCheckoutUserId(data);
+  if (!userId) {
     logger.warn("Checkout completed without user identifier", {
+      checkoutId: data.id,
       customerId,
     });
     return;
   }
 
-  const userId = customerExternalId || metadata?.userId;
+  const customer = await ensureCustomerExists(
+    customerId,
+    userId,
+    normalizeString(data.customerEmail) ?? ""
+  );
 
-  // Find or create customer record
-  const existingCustomer = await db.query.polarCustomers.findFirst({
-    where: eq(polarCustomers.polarCustomerId, customerId),
-  });
-
-  if (!existingCustomer) {
-    // Create customer record if it doesn't exist
-    await db.insert(polarCustomers).values({
-      userId,
-      polarCustomerId: customerId,
-      email: customerEmail || "",
-    });
+  if (!customer) {
+    return;
   }
 }
 
-/**
- * Handle subscription.created and subscription.updated events
- */
-async function handleSubscriptionUpdated(data: any) {
-  const {
-    id: subscriptionId,
-    customerId,
-    status,
-    productId,
-    productPriceId,
-    currentPeriodEnd,
-    cancelAtPeriodEnd,
-    customerExternalId,
-  } = data;
+async function upsertSubscription(
+  data: SubscriptionEvent["data"],
+  statusOverride?: string
+) {
+  const customerId = data.customerId;
+  const customerEmail = data.customer.email;
+  const fallbackUserId = normalizeString(data.customer.externalId);
 
-  // Find customer by Polar customer ID
-  const customer = await db.query.polarCustomers.findFirst({
-    where: eq(polarCustomers.polarCustomerId, customerId),
-  });
+  const customer = await ensureCustomerExists(
+    customerId,
+    fallbackUserId,
+    customerEmail
+  );
 
   if (!customer) {
     logger.warn("Subscription updated for unknown customer", {
-      subscriptionId,
+      subscriptionId: data.id,
       customerId,
     });
     return;
   }
 
-  // Check if subscription already exists
   const existingSubscription = await db.query.polarSubscriptions.findFirst({
-    where: eq(polarSubscriptions.polarSubscriptionId, subscriptionId),
+    where: eq(polarSubscriptions.polarSubscriptionId, data.id),
   });
+
+  const firstPrice = data.prices[0];
+  const priceId = firstPrice?.id ?? null;
 
   const subscriptionData = {
     userId: customer.userId,
     polarCustomerId: customerId,
-    polarSubscriptionId: subscriptionId,
-    status,
-    productId: productId || null,
-    productPriceId: productPriceId || null,
-    currentPeriodEnd: currentPeriodEnd
-      ? new Date(currentPeriodEnd)
-      : null,
-    cancelAtPeriodEnd: cancelAtPeriodEnd || false,
+    polarSubscriptionId: data.id,
+    status: statusOverride ?? data.status,
+    productId: data.productId || null,
+    productPriceId: priceId,
+    currentPeriodEnd: data.currentPeriodEnd ?? null,
+    cancelAtPeriodEnd: data.cancelAtPeriodEnd ?? false,
     updatedAt: new Date(),
   };
 
   if (existingSubscription) {
-    // Update existing subscription
     await db
       .update(polarSubscriptions)
       .set(subscriptionData)
       .where(eq(polarSubscriptions.id, existingSubscription.id));
   } else {
-    // Create new subscription
     await db.insert(polarSubscriptions).values({
       ...subscriptionData,
       createdAt: new Date(),
@@ -181,46 +186,27 @@ async function handleSubscriptionUpdated(data: any) {
   }
 
   logger.info("Subscription updated", {
-    subscriptionId,
+    subscriptionId: data.id,
     userId: customer.userId,
-    status,
+    status: subscriptionData.status,
   });
 }
 
-/**
- * Handle subscription.canceled event
- */
-async function handleSubscriptionCanceled(data: any) {
-  const { id: subscriptionId } = data;
-
-  const subscription = await db.query.polarSubscriptions.findFirst({
-    where: eq(polarSubscriptions.polarSubscriptionId, subscriptionId),
-  });
-
-  if (subscription) {
-    await db
-      .update(polarSubscriptions)
-      .set({
-        status: "canceled",
-        updatedAt: new Date(),
-      })
-      .where(eq(polarSubscriptions.id, subscription.id));
-
-    logger.info("Subscription canceled", {
-      subscriptionId,
-      userId: subscription.userId,
-    });
-  }
-}
-
-/**
- * Handle customer.created and customer.updated events
- */
-async function handleCustomerUpdated(data: any) {
-  const { id: customerId, email, externalId } = data;
+async function handleCustomerUpdated(data: CustomerEvent["data"]) {
+  const customerId = data.id;
+  const email = normalizeString(data.email) ?? "";
+  const externalId = normalizeString(data.externalId);
 
   if (!externalId) {
     logger.warn("Customer updated without external ID", { customerId });
+    return;
+  }
+
+  const existingUser = await db.query.user.findFirst({
+    where: eq(user.id, externalId),
+  });
+  if (!existingUser) {
+    logger.warn("Customer mapped to unknown user", { customerId, externalId });
     return;
   }
 
@@ -229,7 +215,6 @@ async function handleCustomerUpdated(data: any) {
   });
 
   if (existingCustomer) {
-    // Update existing customer
     await db
       .update(polarCustomers)
       .set({
@@ -238,11 +223,110 @@ async function handleCustomerUpdated(data: any) {
       })
       .where(eq(polarCustomers.id, existingCustomer.id));
   } else {
-    // Create new customer
     await db.insert(polarCustomers).values({
       userId: externalId,
       polarCustomerId: customerId,
-      email: email || "",
+      email,
     });
   }
+}
+
+async function ensureCustomerExists(
+  customerId: string,
+  userId: string | null,
+  email: string | null
+) {
+  const existingCustomer = await db.query.polarCustomers.findFirst({
+    where: eq(polarCustomers.polarCustomerId, customerId),
+  });
+
+  if (existingCustomer) {
+    if (email && email !== existingCustomer.email) {
+      await db
+        .update(polarCustomers)
+        .set({
+          email,
+          updatedAt: new Date(),
+        })
+        .where(eq(polarCustomers.id, existingCustomer.id));
+
+      return { ...existingCustomer, email };
+    }
+    return existingCustomer;
+  }
+
+  if (!userId) {
+    return null;
+  }
+
+  const existingUser = await db.query.user.findFirst({
+    where: eq(user.id, userId),
+  });
+
+  if (!existingUser) {
+    logger.warn("Polar webhook user reference does not exist", {
+      customerId,
+      userId,
+    });
+    return null;
+  }
+
+  const existingCustomerForUser = await db.query.polarCustomers.findFirst({
+    where: eq(polarCustomers.userId, userId),
+  });
+
+  if (existingCustomerForUser) {
+    const nextEmail = email ?? existingCustomerForUser.email;
+
+    if (
+      existingCustomerForUser.polarCustomerId !== customerId
+      || existingCustomerForUser.email !== nextEmail
+    ) {
+      await db
+        .update(polarCustomers)
+        .set({
+          polarCustomerId: customerId,
+          email: nextEmail,
+          updatedAt: new Date(),
+        })
+        .where(eq(polarCustomers.id, existingCustomerForUser.id));
+
+      return { ...existingCustomerForUser, polarCustomerId: customerId, email: nextEmail };
+    }
+
+    return existingCustomerForUser;
+  }
+
+  await db.insert(polarCustomers).values({
+    userId,
+    polarCustomerId: customerId,
+    email: email ?? "",
+  });
+
+  return db.query.polarCustomers.findFirst({
+    where: eq(polarCustomers.polarCustomerId, customerId),
+  });
+}
+
+function getCheckoutUserId(data: CheckoutEvent["data"]): string | null {
+  const externalId = normalizeString(data.externalCustomerId)
+    ?? normalizeString(data.customerExternalId);
+  if (externalId) {
+    return externalId;
+  }
+
+  const metadataUserId = data.metadata.userId;
+  if (typeof metadataUserId === "string" && metadataUserId.trim()) {
+    return metadataUserId.trim();
+  }
+
+  return null;
+}
+
+function normalizeString(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
 }

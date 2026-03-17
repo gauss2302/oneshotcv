@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { X } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { OnboardingStep1 } from "./OnboardingStep1";
@@ -20,6 +20,74 @@ export function OnboardingModal({
 }: OnboardingModalProps) {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3>(1);
   const [isAnimating, setIsAnimating] = useState(false);
+  const animationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const persistOnboardingCompletion = useCallback(async () => {
+    localStorage.setItem("onboarding_completed", "true");
+
+    try {
+      const response = await fetch("/api/user/onboarding/complete", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to update onboarding status: ${response.status}`
+        );
+      }
+    } catch (error) {
+      logger.error(
+        "Failed to update onboarding status",
+        error instanceof Error ? error : undefined
+      );
+      // Continue anyway: localStorage has already been updated.
+    }
+  }, []);
+
+  const handleComplete = useCallback(async () => {
+    await persistOnboardingCompletion();
+    onComplete();
+  }, [onComplete, persistOnboardingCompletion]);
+
+  const handleSkip = useCallback(async () => {
+    await persistOnboardingCompletion();
+    onSkip();
+  }, [onSkip, persistOnboardingCompletion]);
+
+  const handleNext = useCallback(() => {
+    if (currentStep >= 3) {
+      void handleComplete();
+      return;
+    }
+
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+    }
+
+    setIsAnimating(true);
+    animationTimeoutRef.current = setTimeout(() => {
+      setCurrentStep((prev) => (prev + 1) as 1 | 2 | 3);
+      setIsAnimating(false);
+      animationTimeoutRef.current = null;
+    }, 150);
+  }, [currentStep, handleComplete]);
+
+  const handlePrevious = useCallback(() => {
+    if (currentStep <= 1) {
+      return;
+    }
+
+    if (animationTimeoutRef.current) {
+      clearTimeout(animationTimeoutRef.current);
+    }
+
+    setIsAnimating(true);
+    animationTimeoutRef.current = setTimeout(() => {
+      setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3);
+      setIsAnimating(false);
+      animationTimeoutRef.current = null;
+    }, 150);
+  }, [currentStep]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -37,7 +105,7 @@ export function OnboardingModal({
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape" && isOpen) {
-        handleSkip();
+        void handleSkip();
       }
     };
 
@@ -48,69 +116,15 @@ export function OnboardingModal({
     return () => {
       document.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, handleSkip]);
 
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setIsAnimating(true);
-      setTimeout(() => {
-        setCurrentStep((prev) => (prev + 1) as 1 | 2 | 3);
-        setIsAnimating(false);
-      }, 150);
-    } else {
-      handleComplete();
-    }
-  };
-
-  const handlePrevious = () => {
-    if (currentStep > 1) {
-      setIsAnimating(true);
-      setTimeout(() => {
-        setCurrentStep((prev) => (prev - 1) as 1 | 2 | 3);
-        setIsAnimating(false);
-      }, 150);
-    }
-  };
-
-  const handleComplete = async () => {
-    // Update localStorage
-    localStorage.setItem("onboarding_completed", "true");
-
-    // Update database
-    try {
-      await fetch("/api/user/onboarding/complete", {
-        method: "POST",
-      });
-    } catch (error) {
-      logger.error(
-        "Failed to update onboarding status",
-        error instanceof Error ? error : undefined
-      );
-      // Continue anyway - localStorage is updated
-    }
-
-    onComplete();
-  };
-
-  const handleSkip = async () => {
-    // Update localStorage
-    localStorage.setItem("onboarding_completed", "true");
-
-    // Update database
-    try {
-      await fetch("/api/user/onboarding/complete", {
-        method: "POST",
-      });
-    } catch (error) {
-      logger.error(
-        "Failed to update onboarding status",
-        error instanceof Error ? error : undefined
-      );
-      // Continue anyway - localStorage is updated
-    }
-
-    onSkip();
-  };
+  useEffect(() => {
+    return () => {
+      if (animationTimeoutRef.current) {
+        clearTimeout(animationTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -142,20 +156,18 @@ export function OnboardingModal({
             }`}
           >
             {currentStep === 1 && (
-              <OnboardingStep1 onNext={handleNext} onSkip={handleSkip} />
+              <OnboardingStep1 onNext={handleNext} />
             )}
             {currentStep === 2 && (
               <OnboardingStep2
                 onNext={handleNext}
                 onPrevious={handlePrevious}
-                onSkip={handleSkip}
               />
             )}
             {currentStep === 3 && (
               <OnboardingStep3
                 onComplete={handleComplete}
                 onPrevious={handlePrevious}
-                onSkip={handleSkip}
               />
             )}
           </div>
@@ -168,9 +180,9 @@ export function OnboardingModal({
               key={step}
               className={`h-2 rounded-full transition-all duration-200 ${
                 step === currentStep
-                  ? "w-8 bg-gradient-to-r from-[#FFA239] to-[#FF5656]"
+                  ? "w-8 bg-gradient-to-r from-[#457b9d] to-[#a8dadc]"
                   : step < currentStep
-                  ? "w-2 bg-[#FFA239]"
+                  ? "w-2 bg-[#457b9d]"
                   : "w-2 bg-gray-300"
               }`}
             />

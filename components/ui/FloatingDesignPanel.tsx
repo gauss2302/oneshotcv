@@ -50,7 +50,7 @@ export const FloatingDesignPanel: React.FC = () => {
       <button
         data-design-button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-40 bg-gradient-to-r from-[#FFA239] to-[#FF5656] hover:from-[#FF5656] hover:to-[#FFA239] text-white p-4 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-110 active:scale-95"
+        className="fixed bottom-6 right-6 z-40 bg-[#457b9d] hover:bg-[#3d6d8a] text-white p-4 rounded-full shadow-[var(--shadow-md)] hover:shadow-lg transition-all duration-200 transform hover:scale-105 active:scale-95"
         title="Design Tools"
         aria-label="Open design tools"
       >
@@ -65,7 +65,7 @@ export const FloatingDesignPanel: React.FC = () => {
         }`}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] p-4 flex items-center justify-between">
+        <div className="bg-[#457b9d] p-4 flex items-center justify-between">
           <div className="flex items-center gap-2 text-white">
             <Palette size={20} />
             <h2 className="text-lg font-bold">Design Tools</h2>

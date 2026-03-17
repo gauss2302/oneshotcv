@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import type { LucideIcon } from "lucide-react";
 import {
   LayoutDashboard,
@@ -12,6 +13,8 @@ import {
   Plus,
   Loader2,
   Trash2,
+  Menu,
+  X,
 } from "lucide-react";
 
 interface ResumeVersion {
@@ -59,6 +62,21 @@ const formatUpdatedAt = (value: string | null) => {
   }
 };
 
+const SIDEBAR_CONTENT_CLASS =
+  "flex flex-col border-r border-gray-200 bg-white w-72 xl:w-80";
+
+function useIsMobile(breakpoint = 1024) {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${breakpoint - 1}px)`);
+    const set = () => setIsMobile(mq.matches);
+    set();
+    mq.addEventListener("change", set);
+    return () => mq.removeEventListener("change", set);
+  }, [breakpoint]);
+  return isMobile;
+}
+
 export function DashboardSidebar({
   versions,
   selectedVersionId,
@@ -69,6 +87,8 @@ export function DashboardSidebar({
   isCreating = false,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const isMobile = useIsMobile(1024);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const isNavActive = (href: string) => {
     if (!pathname) return false;
@@ -76,11 +96,17 @@ export function DashboardSidebar({
     return pathname.startsWith(`${href}/`);
   };
 
-  return (
-    <aside className="hidden lg:flex w-72 xl:w-80 flex-col border-r border-gray-200 bg-white">
+  const closeDrawer = () => setDrawerOpen(false);
+
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  const sidebarContent = (
+    <>
       <div className="px-6 py-8 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FFA239] to-[#FF5656] text-white font-bold flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#457b9d] to-[#a8dadc] text-white font-bold flex items-center justify-center">
             CV
           </div>
           <div>
@@ -106,7 +132,7 @@ export function DashboardSidebar({
               <item.icon
                 size={18}
                 className={
-                  isNavActive(item.href) ? "text-[#FF5656]" : "text-gray-400"
+                  isNavActive(item.href) ? "text-[#a8dadc]" : "text-gray-400"
                 }
               />
               {item.label}
@@ -123,7 +149,7 @@ export function DashboardSidebar({
               type="button"
               onClick={onCreateVersion}
               disabled={isCreating}
-              className="inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:text-[#FF5656] hover:border-[#FF5656] transition-all duration-200 h-7 w-7 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center rounded-lg border border-gray-200 text-gray-600 hover:text-[#a8dadc] hover:border-[#a8dadc] transition-all duration-200 h-7 w-7 text-sm disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isCreating ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -162,8 +188,8 @@ export function DashboardSidebar({
                     key={version.id}
                     className={`rounded-2xl border px-4 py-3 transition-all duration-200 ${
                       isActive
-                        ? "border-transparent bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white shadow-md shadow-[#FFA239]/25"
-                        : "border-gray-200 hover:border-[#FFA239] hover:shadow-sm"
+                        ? "border-transparent bg-[#457b9d] text-white shadow-md shadow-[#457b9d]/25"
+                        : "border-gray-200 hover:border-[#457b9d] hover:shadow-sm"
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -192,7 +218,7 @@ export function DashboardSidebar({
                         className={`h-8 w-8 rounded-full flex items-center justify-center transition ${
                           isActive
                             ? "bg-white/10 text-white hover:bg-white/20"
-                            : "bg-gray-100 text-gray-500 hover:text-[#FF5656]"
+                            : "bg-gray-100 text-gray-500 hover:text-[#a8dadc]"
                         }`}
                         type="button"
                       >
@@ -218,6 +244,57 @@ export function DashboardSidebar({
           </button>
         ))}
       </div>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(true)}
+          className="lg:hidden fixed top-3 left-4 z-30 flex items-center justify-center w-11 h-11 rounded-xl border border-gray-200 bg-white text-gray-700 shadow-sm hover:bg-gray-50 transition"
+          aria-label="Open menu"
+        >
+          <Menu size={20} />
+        </button>
+        {drawerOpen && (
+          <>
+            <div
+              className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+              aria-hidden
+              onClick={closeDrawer}
+            />
+            <aside
+              className={`${SIDEBAR_CONTENT_CLASS} fixed inset-y-0 left-0 z-50 lg:hidden flex flex-col shadow-xl`}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Dashboard navigation"
+            >
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <span className="text-sm font-semibold text-gray-900">Menu</span>
+                <button
+                  type="button"
+                  onClick={closeDrawer}
+                  className="flex items-center justify-center w-10 h-10 rounded-lg text-gray-600 hover:bg-gray-100 transition"
+                  aria-label="Close menu"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto">
+                {sidebarContent}
+              </div>
+            </aside>
+          </>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <aside className={`hidden lg:flex ${SIDEBAR_CONTENT_CLASS}`}>
+      {sidebarContent}
     </aside>
   );
 }

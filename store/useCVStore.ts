@@ -54,7 +54,7 @@ interface CVStore extends CVState {
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
-export const useCVStore = create<CVStore>((set, get) => ({
+export const useCVStore = create<CVStore>((set) => ({
   // Initial state
   ...createEmptyCVState(),
   resumeId: null,
@@ -116,6 +116,7 @@ export const useCVStore = create<CVStore>((set, get) => ({
           location: "",
           description: "",
           current: false,
+          isCurrent: false,
         },
       ],
       hasUnsavedChanges: true,

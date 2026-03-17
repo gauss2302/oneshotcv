@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse, NextRequest } from "next/server";
 import { auth } from "@/lib/auth/auth";
 import { headers } from "next/headers";
@@ -15,6 +14,7 @@ import { and, eq } from "drizzle-orm";
 import { getPublicUrl } from "@/lib/minio";
 import { checkRateLimit, getClientIdentifier, rateLimitConfigs } from "@/lib/rate-limit";
 import { resumeSaveSchema, resumeIdSchema } from "@/lib/validation";
+import { z } from "zod";
 
 // Helper: Convert DB record to API response format
 function formatResumeResponse(
@@ -90,6 +90,7 @@ function formatResumeResponse(
           endDate: exp.endDate ?? "",
           location: exp.location ?? "",
           description: exp.description ?? "",
+          current: exp.isCurrent,
           isCurrent: exp.isCurrent,
         })) ?? [],
       skills:
@@ -101,6 +102,8 @@ function formatResumeResponse(
     },
   };
 }
+
+type ResumeSaveContent = z.infer<typeof resumeSaveSchema>["content"];
 
 export async function GET(request: NextRequest) {
   const session = await auth.api.getSession({
@@ -178,14 +181,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  let body;
+  let body: unknown;
   try {
     body = await req.json();
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Invalid JSON in request body" }, { status: 400 });
   }
 
-  const { content, id: resumeId, title, createNew } = body;
+  if (!body || typeof body !== "object") {
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  const payload = body as {
+    content?: unknown;
+    id?: unknown;
+    title?: unknown;
+    createNew?: unknown;
+  };
+
+  const content = payload.content;
+  const resumeId = payload.id;
+  const title = payload.title;
+  const createNew = payload.createNew;
 
   if (!content) {
     return NextResponse.json({ error: "Content is required" }, { status: 400 });
@@ -202,24 +219,39 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Validate request body structure
-  try {
-    resumeSaveSchema.parse({ title: title || "Untitled", content });
-  } catch (validationError: any) {
+  const titleForValidation = typeof title === "string" ? title : "Untitled";
+  const parsedResume = resumeSaveSchema.safeParse({
+    title: titleForValidation,
+    content,
+  });
+  if (!parsedResume.success) {
     return NextResponse.json(
       {
         error: "Validation failed",
-        details: validationError.errors || validationError.message,
+        details: parsedResume.error.issues,
       },
       { status: 400 }
     );
   }
 
+  const validatedContent = parsedResume.data.content;
+  const validatedTitle = typeof title === "string" ? title : undefined;
+  const validatedResumeId = typeof resumeId === "string" ? resumeId : null;
+  const shouldCreateNew = createNew === true;
+
   // Extract data from content object
-  const { personalInfo, designSettings, summary, selectedTemplate } = content;
+  const { personalInfo, designSettings, selectedTemplate } = validatedContent;
+
+  const legacySummary =
+    typeof content === "object"
+    && content !== null
+    && "summary" in content
+    && typeof (content as { summary?: unknown }).summary === "string"
+      ? (content as { summary: string }).summary
+      : null;
 
   // Resolve fields that can come from multiple places
-  const resolvedSummary = summary ?? personalInfo?.summary ?? null;
+  const resolvedSummary = legacySummary ?? personalInfo.summary ?? null;
   const resolvedProfessionalTitle = personalInfo?.title ?? null;
 
   // Base resume data (always updated)
@@ -245,13 +277,13 @@ export async function POST(req: NextRequest) {
   };
 
   // Helper to sync related data (education, experience, skills)
-  async function syncRelatedData(resumeId: string) {
+  async function syncRelatedData(resumeId: string, contentToSync: ResumeSaveContent) {
     // Sync Education
-    if (content.education) {
+    if (contentToSync.education) {
       await db.delete(education).where(eq(education.resumeId, resumeId));
-      if (content.education.length > 0) {
+      if (contentToSync.education.length > 0) {
         await db.insert(education).values(
-          content.education.map((edu: any) => ({
+          contentToSync.education.map((edu) => ({
             resumeId,
             institution: edu.institution ?? "",
             degree: edu.degree ?? null,
@@ -264,11 +296,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Sync Experience
-    if (content.experience) {
+    if (contentToSync.experience) {
       await db.delete(experience).where(eq(experience.resumeId, resumeId));
-      if (content.experience.length > 0) {
+      if (contentToSync.experience.length > 0) {
         await db.insert(experience).values(
-          content.experience.map((exp: any, index: number) => ({
+          contentToSync.experience.map((exp, index) => ({
             resumeId,
             company: exp.company ?? "",
             position: exp.position ?? "",
@@ -284,11 +316,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Sync Skills
-    if (content.skills) {
+    if (contentToSync.skills) {
       await db.delete(skills).where(eq(skills.resumeId, resumeId));
-      if (content.skills.length > 0) {
+      if (contentToSync.skills.length > 0) {
         await db.insert(skills).values(
-          content.skills.map((skill: any, index: number) => ({
+          contentToSync.skills.map((skill, index) => ({
             resumeId,
             name: skill.name ?? "",
             level: skill.level ?? 50,
@@ -300,34 +332,34 @@ export async function POST(req: NextRequest) {
   }
 
   // Update existing resume by ID
-  if (resumeId) {
+  if (validatedResumeId) {
     // Only include title in update if it was explicitly provided
     const updateData =
-      title !== undefined ? { ...resumeData, title } : resumeData;
+      validatedTitle !== undefined ? { ...resumeData, title: validatedTitle } : resumeData;
 
     await db
       .update(resumes)
       .set(updateData)
       .where(
-        and(eq(resumes.id, resumeId), eq(resumes.userId, session.user.id))
+        and(eq(resumes.id, validatedResumeId), eq(resumes.userId, session.user.id))
       );
 
-    await syncRelatedData(resumeId);
-    return NextResponse.json({ success: true, id: resumeId });
+    await syncRelatedData(validatedResumeId, validatedContent);
+    return NextResponse.json({ success: true, id: validatedResumeId });
   }
 
   // Create new resume
-  if (createNew) {
+  if (shouldCreateNew) {
     const [newResume] = await db
       .insert(resumes)
       .values({
         ...resumeData,
-        title: title ?? content.title ?? null,
+        title: validatedTitle ?? null,
         userId: session.user.id,
       })
       .returning({ id: resumes.id });
 
-    await syncRelatedData(newResume.id);
+    await syncRelatedData(newResume.id, validatedContent);
     return NextResponse.json({ success: true, id: newResume.id });
   }
 
@@ -343,7 +375,7 @@ export async function POST(req: NextRequest) {
       .set(resumeData)
       .where(eq(resumes.id, existingResume.id));
 
-    await syncRelatedData(existingResume.id);
+    await syncRelatedData(existingResume.id, validatedContent);
     return NextResponse.json({ success: true, id: existingResume.id });
   }
 
@@ -352,12 +384,12 @@ export async function POST(req: NextRequest) {
     .insert(resumes)
     .values({
       ...resumeData,
-      title: title ?? content.title ?? null,
+      title: validatedTitle ?? null,
       userId: session.user.id,
     })
     .returning({ id: resumes.id });
 
-  await syncRelatedData(fallbackResume.id);
+  await syncRelatedData(fallbackResume.id, validatedContent);
   return NextResponse.json({ success: true, id: fallbackResume.id });
 }
 
@@ -370,8 +402,19 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { id } = body;
+  let body: unknown;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { error: "Invalid JSON in request body" },
+      { status: 400 }
+    );
+  }
+
+  const id = typeof body === "object" && body !== null && "id" in body
+    ? (body as { id?: unknown }).id
+    : undefined;
 
   if (!id) {
     return NextResponse.json(
@@ -380,9 +423,17 @@ export async function DELETE(req: Request) {
     );
   }
 
+  const parsedId = resumeIdSchema.safeParse(id);
+  if (!parsedId.success) {
+    return NextResponse.json(
+      { error: "Invalid resume ID format" },
+      { status: 400 }
+    );
+  }
+
   await db
     .delete(resumes)
-    .where(and(eq(resumes.id, id), eq(resumes.userId, session.user.id)));
+    .where(and(eq(resumes.id, parsedId.data), eq(resumes.userId, session.user.id)));
 
   return NextResponse.json({ success: true });
 }

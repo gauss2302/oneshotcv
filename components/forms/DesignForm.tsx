@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCVStore } from '@/store/useCVStore';
 import { Palette, Type, Scaling, AlignLeft, AlignCenter, AlignRight, AlignJustify, Layout, MoveVertical } from 'lucide-react';
+import type { CVDesignSettings } from '@/types/cv';
 
 const colors = [
   { name: 'Blue', value: '#3b82f6' },
@@ -12,11 +13,21 @@ const colors = [
   { name: 'Black', value: '#000000' },
 ];
 
-const fonts = [
+const fonts: Array<{ id: CVDesignSettings["fontFamily"]; name: string; style: string }> = [
   { id: 'sans', name: 'Sans Serif', style: 'font-sans' },
   { id: 'serif', name: 'Serif', style: 'font-serif' },
   { id: 'mono', name: 'Monospace', style: 'font-mono' },
   { id: 'times', name: 'Times New Roman', style: 'font-serif' },
+];
+
+const alignments: Array<{
+  id: CVDesignSettings["textAlignment"];
+  icon: React.ComponentType<{ size?: number }>;
+}> = [
+  { id: 'left', icon: AlignLeft },
+  { id: 'center', icon: AlignCenter },
+  { id: 'right', icon: AlignRight },
+  { id: 'justify', icon: AlignJustify },
 ];
 
 export const DesignForm: React.FC = () => {
@@ -97,7 +108,7 @@ export const DesignForm: React.FC = () => {
           {fonts.map((font) => (
             <button
               key={font.id}
-              onClick={() => updateDesign({ fontFamily: font.id as any })}
+              onClick={() => updateDesign({ fontFamily: font.id })}
               className={`
                 px-4 py-3 rounded-lg border-2 text-left transition-all
                 ${designSettings.fontFamily === font.id 
@@ -121,15 +132,10 @@ export const DesignForm: React.FC = () => {
           <h3>Alignment</h3>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-lg">
-          {[
-            { id: 'left', icon: AlignLeft },
-            { id: 'center', icon: AlignCenter },
-            { id: 'right', icon: AlignRight },
-            { id: 'justify', icon: AlignJustify },
-          ].map((align) => (
+          {alignments.map((align) => (
             <button
               key={align.id}
-              onClick={() => updateDesign({ textAlignment: align.id as any })}
+              onClick={() => updateDesign({ textAlignment: align.id })}
               className={`flex-1 p-2 rounded-md flex justify-center transition-all ${
                 designSettings.textAlignment === align.id ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'
               }`}

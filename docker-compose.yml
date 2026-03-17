@@ -3,10 +3,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: resume_constructor_app
+    container_name: resume-constructor-app
     restart: always
     ports:
-      - "3005:3000"
+      - "3000:3000"
     env_file:
       - .env
     environment:
@@ -31,14 +31,14 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: resume_constructor_db
+    container_name: resume-constructor-postgres
     restart: always
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=resume_constructor
     ports:
-      - "5434:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -52,7 +52,7 @@ services:
   # Optional: Drizzle Studio for database management
   studio:
     image: node:20-alpine
-    container_name: resume_constructor_studio
+    container_name: resume-constructor-studio
     working_dir: /app
     volumes:
       - ./:/app
@@ -69,7 +69,7 @@ services:
   # MinIO for object storage (photos)
   minio:
     image: minio/minio:latest
-    container_name: resume_constructor_minio
+    container_name: resume-constructor-minio
     restart: always
     ports:
       - "9000:9000" # API

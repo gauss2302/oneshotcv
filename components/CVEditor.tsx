@@ -46,7 +46,7 @@ const TabButton = memo(({
           ? "text-blue-600 bg-blue-50/50"
           : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
       )}
-      aria-selected={isActive}
+      aria-pressed={isActive}
       aria-label={`${tab.label} tab`}
     >
       {isActive && (

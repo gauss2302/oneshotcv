@@ -77,7 +77,7 @@ export default function Header() {
           href="/dashboard"
           className="flex items-center gap-3 group transition-transform hover:scale-[1.02]"
         >
-          <div className="w-28 h-9 bg-gradient-to-br from-[#FFA239] to-[#FF5656] rounded-lg flex items-center justify-center text-white font-bold text-base shadow-md shadow-[#FFA239]/25 group-hover:shadow-lg group-hover:shadow-[#FFA239]/30 transition-all">
+          <div className="w-28 h-9 bg-[#457b9d] rounded-[16px] flex items-center justify-center text-white font-bold text-base shadow-[var(--shadow-sm)] group-hover:shadow-md transition-all">
             One Shot
           </div>
           <span className="font-semibold text-lg text-gray-800 hidden sm:block">
@@ -179,13 +179,13 @@ export default function Header() {
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
-                className="text-gray-600 hover:text-[#FFA239] font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50/80"
+                className="text-gray-600 hover:text-[#457b9d] font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-gray-50/80"
               >
                 Sign In
               </Link>
               <Link
                 href="/register"
-                className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white px-5 py-2 rounded-lg font-semibold hover:from-[#FF5656] hover:to-[#FFA239] transition-all shadow-md shadow-[#FFA239]/25 hover:shadow-lg hover:shadow-[#FFA239]/30"
+                className="bg-[#457b9d] text-white px-5 py-2 rounded-[16px] font-semibold hover:bg-[#1565e0] transition-all shadow-[var(--shadow-sm)] hover:shadow-md"
               >
                 Get Started
               </Link>

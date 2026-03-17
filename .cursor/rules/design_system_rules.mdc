@@ -26,36 +26,35 @@ This document defines the comprehensive design system for the CV Builder applica
 
 ### Color System
 
-#### Brand Colors
+#### Brand Colors (Havamind Design System)
 ```typescript
 // From lib/design-tokens.ts
 brandColors = {
-  primary: {
-    orange: '#FFA239',
-    red: '#FF5656',
-  },
+  primary: '#1B76FC',
+  secondary: '#36C9F9',
+  accentWarm: '#FBE984',
   gradient: {
-    from: '#FFA239',
-    to: '#FF5656',
+    from: '#1B76FC',
+    to: '#36C9F9',
   },
 }
 ```
 
 **Usage in Tailwind**:
 ```tsx
-// Gradient button
-className="bg-gradient-to-r from-[#FFA239] to-[#FF5656]"
+// Primary CTA button
+className="bg-[#1B76FC] hover:bg-[#1565e0]"
 
 // Shadow with brand color
-className="shadow-md shadow-[#FFA239]/25"
+className="shadow-[var(--shadow-sm)] or shadow-[var(--shadow-md)]"
 ```
 
 #### Semantic Color Tokens
 
-**Background Colors**:
-- `--color-background-primary`: `#ffffff` (white)
-- `--color-background-secondary`: `#f9fafb` (gray-50)
-- `--color-background-tertiary`: `#f3f4f6` (gray-100)
+**Background / Surfaces**:
+- `--color-background-primary`: `#FFFFFF`
+- `--color-background-secondary`: `#FAFAFA` (Surface)
+- `--color-background-tertiary`: `#F4F6F8` (Surface 2)
 
 **Foreground Colors**:
 - `--color-foreground-primary`: `#111827` (gray-900) - Main text
@@ -64,7 +63,7 @@ className="shadow-md shadow-[#FFA239]/25"
 - `--color-foreground-muted`: `#9ca3af` (gray-400) - Muted text
 
 **Border Colors**:
-- `--color-border-default`: `#e5e7eb` (gray-200) - Default borders
+- `--color-border-default`: `#E6E8EC` - Default borders
 - `--color-border-light`: `#f3f4f6` (gray-100) - Light borders
 - `--color-border-medium`: `#d1d5db` (gray-300) - Medium borders
 
@@ -166,7 +165,7 @@ shadows = {
 **Usage**:
 - Cards: `shadow-sm` or `shadow-md`
 - Modals: `shadow-xl`
-- Brand elements: `shadow-md shadow-[#FFA239]/25`
+- Brand elements: `shadow-[var(--shadow-md)]`
 
 ### Z-Index Scale
 
@@ -297,10 +296,10 @@ All UI components follow these patterns:
 
 ```tsx
 // ✅ Good - Using design tokens
-<button className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white rounded-lg px-4 py-2 shadow-md shadow-[#FFA239]/25 transition-all duration-200">
+<button className="bg-gradient-to-r from-[#1B76FC] to-[#36C9F9] text-white rounded-lg px-4 py-2 shadow-[var(--shadow-md)] transition-all duration-200">
 
 // ❌ Bad - Hardcoded values
-<button className="bg-orange-500 text-white rounded-md px-5 py-3">
+<button className="bg-[#1B76FC] text-white rounded-md px-5 py-3">
 ```
 
 #### Consistent Spacing
@@ -426,14 +425,14 @@ import { Plus, Trash2, Edit } from 'lucide-react'
 #### 2. Custom Utilities for Design Tokens
 ```tsx
 // Use Tailwind's arbitrary values for brand colors
-className="bg-gradient-to-r from-[#FFA239] to-[#FF5656]"
+className="bg-gradient-to-r from-[#1B76FC] to-[#36C9F9]"
 ```
 
 #### 3. CSS Custom Properties for Dynamic Theming
 ```css
 /* In globals.css */
 :root {
-  --brand-primary-orange: #FFA239;
+  --brand-primary: #1B76FC;
 }
 ```
 
@@ -517,8 +516,8 @@ components/
 **Example Mapping**:
 ```
 Figma Variable: "Brand/Primary/Orange"
-CSS Variable: --brand-primary-orange
-Tailwind: from-[#FFA239]
+CSS Variable: --brand-primary
+Tailwind: from-[#1B76FC]
 ```
 
 ### Component Mapping
@@ -609,14 +608,14 @@ Tailwind: from-[#FFA239]
 
 **Before**:
 ```tsx
-<button className="bg-orange-500 text-white px-5 py-3 rounded-md">
+<button className="bg-[#1B76FC] text-white px-5 py-3 rounded-md">
   Create
 </button>
 ```
 
 **After**:
 ```tsx
-<button className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white px-6 py-3 rounded-lg shadow-md shadow-[#FFA239]/25 transition-all duration-200 hover:shadow-lg active:scale-95">
+<button className="bg-gradient-to-r from-[#1B76FC] to-[#36C9F9] text-white px-6 py-3 rounded-lg shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-lg active:scale-95">
   Create
 </button>
 ```

@@ -1,9 +1,11 @@
 /**
  * Structured logging utility for production
- * Supports JSON format for log aggregation services
+ * By default this logger is silent in-app to avoid noisy stdout/stderr output.
+ * Attach an external transport (e.g. monitoring service) via setTransport().
  */
 
 type LogLevel = "debug" | "info" | "warn" | "error";
+type LogTransport = (entry: LogEntry) => void;
 
 interface LogEntry {
   timestamp: string;
@@ -20,7 +22,7 @@ interface LogEntry {
 
 class Logger {
   private isDevelopment = process.env.NODE_ENV === "development";
-  private isProduction = process.env.NODE_ENV === "production";
+  private transport: LogTransport | null = null;
 
   private formatLog(level: LogLevel, message: string, context?: Record<string, unknown>, error?: Error): LogEntry {
     const entry: LogEntry = {
@@ -67,19 +69,14 @@ class Logger {
   }
 
   private output(entry: LogEntry): void {
-    if (this.isProduction) {
-      // JSON format for production (log aggregation)
-      console.log(JSON.stringify(entry));
-    } else {
-      // Human-readable format for development
-      const prefix = `[${entry.timestamp}] [${entry.level.toUpperCase()}]`;
-      console.log(prefix, entry.message);
-      if (entry.context) {
-        console.log("  Context:", entry.context);
-      }
-      if (entry.error) {
-        console.error("  Error:", entry.error);
-      }
+    if (!this.transport) {
+      return;
+    }
+
+    try {
+      this.transport(entry);
+    } catch {
+      // Transport failures are intentionally ignored to avoid app crashes.
     }
   }
 
@@ -120,10 +117,14 @@ class Logger {
     const level = statusCode >= 500 ? "error" : statusCode >= 400 ? "warn" : "info";
     this.output(this.formatLog(level, `${method} ${path} - ${statusCode}`, context));
   }
+
+  setTransport(transport: LogTransport | null): void {
+    this.transport = transport;
+  }
 }
 
 // Export singleton instance
 export const logger = new Logger();
 
 // Export type for use in other modules
-export type { LogLevel, LogEntry };
+export type { LogLevel, LogEntry, LogTransport };

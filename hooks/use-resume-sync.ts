@@ -162,7 +162,10 @@ export function useResumeSync() {
       setIsSaving(true);
 
       try {
-        const { photo, ...personalInfoWithoutPhoto } = state.personalInfo;
+        const personalInfoWithoutPhoto = {
+          ...state.personalInfo,
+          photo: undefined,
+        };
 
         const response = await fetch("/api/resume", {
           method: "POST",
@@ -251,7 +254,10 @@ export function useResumeSync() {
         cancelPendingSave();
 
         // Fire and forget save
-        const { photo, ...personalInfoWithoutPhoto } = state.personalInfo;
+        const personalInfoWithoutPhoto = {
+          ...state.personalInfo,
+          photo: undefined,
+        };
         fetch("/api/resume", {
           method: "POST",
           headers: { "Content-Type": "application/json" },

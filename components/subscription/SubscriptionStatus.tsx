@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CheckCircle2, XCircle, Clock, AlertCircle } from "lucide-react";
+import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
 import { logger } from "@/lib/logger";
 
 interface SubscriptionStatusProps {
@@ -76,7 +76,7 @@ export function SubscriptionStatus({ className = "" }: SubscriptionStatusProps) 
             </p>
             <a
               href="/dashboard?subscription=required"
-              className="inline-flex items-center gap-2 text-sm font-medium text-amber-700 hover:text-amber-800 transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[#457b9d] hover:underline transition-colors"
             >
               View Plans →
             </a>

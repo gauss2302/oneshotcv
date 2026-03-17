@@ -1,7 +1,7 @@
 import React from "react";
 import { CVState, CVDesignSettings } from "@/types/cv";
 import { TemplateBlock, TemplateGenerator } from "./types";
-import { Mail, Phone, MapPin, Linkedin, Globe } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 
 export const getDesignerTemplateBlocks: TemplateGenerator = (
   data: CVState,

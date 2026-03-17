@@ -1,27 +1,30 @@
-import React, { memo, useEffect, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import { useCVStore } from "@/store/useCVStore";
-import { Cloud, CloudOff, Loader2, Check, AlertCircle } from "lucide-react";
+import { Cloud, CloudOff, Loader2, Check } from "lucide-react";
 
 export const SaveIndicator: React.FC = memo(() => {
   const { isSaving, hasUnsavedChanges, lastSavedAt, isLoading } = useCVStore();
-  const [timeAgo, setTimeAgo] = useState<string>("");
+  const [now, setNow] = useState(() => Date.now());
 
-  // Update time ago in real-time
+  // Re-render once per second while we have a timestamp to display.
   useEffect(() => {
     if (!lastSavedAt) {
-      setTimeAgo("");
       return;
     }
 
-    const updateTimeAgo = () => {
-      setTimeAgo(getTimeAgo(lastSavedAt));
-    };
-
-    updateTimeAgo();
-    const interval = setInterval(updateTimeAgo, 1000);
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [lastSavedAt]);
+
+  const timeAgo = useMemo(() => {
+    if (!lastSavedAt) {
+      return "";
+    }
+    return getTimeAgo(lastSavedAt, now);
+  }, [lastSavedAt, now]);
 
   if (isLoading) {
     return (
@@ -68,8 +71,8 @@ export const SaveIndicator: React.FC = memo(() => {
 });
 SaveIndicator.displayName = 'SaveIndicator';
 
-function getTimeAgo(date: Date): string {
-  const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
+function getTimeAgo(date: Date, now: number): string {
+  const seconds = Math.floor((now - date.getTime()) / 1000);
 
   if (seconds < 5) return "just now";
   if (seconds < 60) return `${seconds}s ago`;

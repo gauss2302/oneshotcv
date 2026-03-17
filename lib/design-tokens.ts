@@ -1,23 +1,24 @@
 /**
  * Design Tokens for CV Builder Application
- * 
- * This file contains all design tokens used throughout the application.
+ * Havamind Design System — ChronoTask style
+ *
  * Tokens are organized by category and can be used in both TypeScript/React
  * and CSS contexts.
  */
 
 // ============================================================================
-// Brand Colors
+// Brand Colors — Strawberry / Honeydew / Frosted Blue / Steel Blue / Deep Space
 // ============================================================================
 
 export const brandColors = {
-  primary: {
-    orange: '#FFA239',
-    red: '#FF5656',
-  },
+  primary: '#457b9d',     /* Steel Blue */
+  secondary: '#a8dadc',   /* Frosted Blue */
+  accent: '#e63946',      /* Strawberry Red */
+  honeydew: '#f1faee',
+  deepSpace: '#1d3557',
   gradient: {
-    from: '#FFA239',
-    to: '#FF5656',
+    from: '#457b9d',
+    to: '#a8dadc',
   },
 } as const;
 
@@ -26,104 +27,113 @@ export const brandColors = {
 // ============================================================================
 
 export const colors = {
-  // Background colors
+  // Background / Surfaces
   background: {
-    primary: '#ffffff',
-    secondary: '#f9fafb', // gray-50
-    tertiary: '#f3f4f6', // gray-100
-    muted: '#f9fafb',
+    primary: '#FFFFFF',
+    secondary: '#FAFAFA',
+    tertiary: '#F4F6F8',
+    muted: '#FAFAFA',
   },
-  
-  // Foreground colors
+
+  // Ink & text
+  ink: '#1d3557',
+  muted: '#457b9d',
+  border: '#a8dadc',
+
+  // Foreground (alias for compatibility)
   foreground: {
-    primary: '#111827', // gray-900
-    secondary: '#4b5563', // gray-600
-    tertiary: '#6b7280', // gray-500
-    muted: '#9ca3af', // gray-400
-    disabled: '#d1d5db', // gray-300
+    primary: '#1d3557',
+    secondary: '#457b9d',
+    tertiary: '#6b7280',
+    muted: '#9ca3af',
+    disabled: '#d1d5db',
   },
-  
+
   // Border colors
-  border: {
-    default: '#e5e7eb', // gray-200
-    light: '#f3f4f6', // gray-100
-    medium: '#d1d5db', // gray-300
-    dark: '#9ca3af', // gray-400
+  borderColors: {
+    default: '#a8dadc',
+    light: '#e8f4f2',
+    medium: '#d1d5db',
+    dark: '#9ca3af',
   },
-  
-  // Accent colors (using brand gradient)
+
+  // Accent
   accent: {
-    primary: brandColors.primary.orange,
-    secondary: brandColors.primary.red,
+    primary: brandColors.primary,
+    secondary: brandColors.secondary,
+    warm: brandColors.accent,
     gradient: `linear-gradient(to right, ${brandColors.gradient.from}, ${brandColors.gradient.to})`,
   },
-  
+
   // Semantic colors
   semantic: {
-    success: '#10b981', // green-500
-    error: '#ef4444', // red-500
-    warning: '#f59e0b', // amber-500
-    info: '#3b82f6', // blue-500
+    success: '#16A34A',
+    error: '#EF4444',
+    warning: '#F59E0B',
+    info: '#3B82F6',
   },
-  
+
   // Interactive states
   interactive: {
     hover: {
-      background: '#f9fafb', // gray-50
-      foreground: '#111827', // gray-900
+      background: '#FAFAFA',
+      foreground: '#111827',
     },
     active: {
-      background: '#f3f4f6', // gray-100
-      foreground: '#111827', // gray-900
+      background: '#F4F6F8',
+      foreground: '#111827',
     },
     focus: {
-      ring: brandColors.primary.orange,
+      ring: brandColors.primary,
       ringOffset: '#ffffff',
     },
   },
 } as const;
 
 // ============================================================================
-// Typography Tokens
+// Typography Tokens (Havamind scale)
 // ============================================================================
 
 export const typography = {
-  // Font families
   fontFamily: {
-    sans: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+    display: 'var(--font-display), ui-sans-serif, system-ui, sans-serif',
+    sans: 'var(--font-body), ui-sans-serif, system-ui, sans-serif',
     serif: 'Georgia, "Times New Roman", serif',
-    mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    mono: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
   },
-  
-  // Font sizes (rem-based)
+
   fontSize: {
-    display: '3rem', // 48px
-    h1: '2.25rem', // 36px
-    h2: '1.875rem', // 30px
-    h3: '1.5rem', // 24px
-    h4: '1.25rem', // 20px
-    bodyLarge: '1.125rem', // 18px
-    body: '1rem', // 16px
-    bodySmall: '0.875rem', // 14px
-    caption: '0.75rem', // 12px
+    display: '3.5rem',
+    displayMobile: '2.5rem',
+    h1: '2.5rem',
+    h1Mobile: '2rem',
+    h2: '2rem',
+    h2Mobile: '1.625rem',
+    h3: '1.5rem',
+    h3Mobile: '1.25rem',
+    h4: '1.25rem',
+    bodyLarge: '1.125rem',
+    body: '1rem',
+    bodySmall: '0.875rem',
+    caption: '0.75rem',
+    micro: '0.6875rem',
   },
-  
-  // Line heights
+
   lineHeight: {
-    tight: '1.2',
-    normal: '1.5',
+    display: '1.05',
+    tight: '1.12',
+    normal: '1.55',
     relaxed: '1.75',
   },
-  
-  // Font weights
+
   fontWeight: {
     normal: '400',
     medium: '500',
     semibold: '600',
     bold: '700',
+    extrabold: '800',
   },
-  
-  // Letter spacing
+
   letterSpacing: {
     tight: '-0.025em',
     normal: '0',
@@ -138,53 +148,52 @@ export const typography = {
 
 export const spacing = {
   0: '0',
-  0.5: '0.125rem', // 2px
-  1: '0.25rem', // 4px
-  1.5: '0.375rem', // 6px
-  2: '0.5rem', // 8px
-  2.5: '0.625rem', // 10px
-  3: '0.75rem', // 12px
-  4: '1rem', // 16px
-  5: '1.25rem', // 20px
-  6: '1.5rem', // 24px
-  8: '2rem', // 32px
-  10: '2.5rem', // 40px
-  12: '3rem', // 48px
-  16: '4rem', // 64px
-  20: '5rem', // 80px
-  24: '6rem', // 96px
+  0.5: '0.125rem',
+  1: '0.25rem',
+  1.5: '0.375rem',
+  2: '0.5rem',
+  2.5: '0.625rem',
+  3: '0.75rem',
+  4: '1rem',
+  5: '1.25rem',
+  6: '1.5rem',
+  8: '2rem',
+  10: '2.5rem',
+  12: '3rem',
+  16: '4rem',
+  20: '5rem',
+  24: '6rem',
 } as const;
 
 // ============================================================================
-// Border Radius Tokens
+// Border Radius Tokens (Havamind)
 // ============================================================================
 
 export const borderRadius = {
   none: '0',
-  sm: '0.375rem', // 6px
-  md: '0.5rem', // 8px
-  lg: '0.75rem', // 12px
-  xl: '1rem', // 16px
-  '2xl': '1.5rem', // 24px
-  '3xl': '2rem', // 32px
+  sm: '10px',
+  md: '16px',
+  lg: '24px',
+  xl: '32px',
+  '2xl': '1.5rem',
+  '3xl': '2rem',
   full: '9999px',
 } as const;
 
 // ============================================================================
-// Shadow Tokens
+// Shadow Tokens (soft, wide - Havamind)
 // ============================================================================
 
 export const shadows = {
   none: 'none',
-  sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-  md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-  lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+  sm: '0 6px 18px rgba(17, 24, 39, 0.06)',
+  md: '0 14px 30px rgba(17, 24, 39, 0.08)',
+  lg: '0 24px 50px rgba(17, 24, 39, 0.12)',
   xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
   '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
   inner: 'inset 0 2px 4px 0 rgb(0 0 0 / 0.05)',
-  // Brand-specific shadow with orange tint
-  brand: '0 4px 6px -1px rgb(255 162 57 / 0.25), 0 2px 4px -2px rgb(255 162 57 / 0.25)',
-  brandLg: '0 10px 15px -3px rgb(255 162 57 / 0.25), 0 4px 6px -4px rgb(255 162 57 / 0.25)',
+  brand: '0 4px 6px -1px rgb(27 118 252 / 0.25), 0 2px 4px -2px rgb(27 118 252 / 0.25)',
+  brandLg: '0 10px 15px -3px rgb(27 118 252 / 0.25), 0 4px 6px -4px rgb(27 118 252 / 0.25)',
 } as const;
 
 // ============================================================================
@@ -208,9 +217,9 @@ export const zIndex = {
 
 export const transitions = {
   duration: {
-    fast: '150ms',
-    normal: '200ms',
-    slow: '300ms',
+    fast: '120ms',
+    normal: '160ms',
+    slow: '220ms',
   },
   easing: {
     default: 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -221,7 +230,7 @@ export const transitions = {
 } as const;
 
 // ============================================================================
-// Breakpoint Tokens (for reference, Tailwind handles these)
+// Breakpoint Tokens
 // ============================================================================
 
 export const breakpoints = {
@@ -236,23 +245,14 @@ export const breakpoints = {
 // Helper Functions
 // ============================================================================
 
-/**
- * Get CSS variable name for a token
- */
 export function getCSSVar(category: string, token: string): string {
   return `--${category}-${token}`;
 }
 
-/**
- * Get Tailwind class for spacing
- */
 export function getSpacingClass(value: keyof typeof spacing): string {
   return `p-${value}`;
 }
 
-/**
- * Get gradient class for brand colors
- */
 export function getBrandGradientClass(direction: 'r' | 'l' | 't' | 'b' = 'r'): string {
   const dirMap = {
     r: 'to-r',

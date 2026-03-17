@@ -1,7 +1,7 @@
 import React from 'react';
 import { CVState, CVDesignSettings } from '@/types/cv';
 import { TemplateBlock, TemplateGenerator } from './types';
-import { Mail, Phone, MapPin, Globe, Linkedin, Github } from 'lucide-react';
+import { Mail, Phone, MapPin } from 'lucide-react';
 
 export const getSidebarTemplateBlocks: TemplateGenerator = (data: CVState, settings: CVDesignSettings) => {
   const { personalInfo, education, experience, skills } = data;

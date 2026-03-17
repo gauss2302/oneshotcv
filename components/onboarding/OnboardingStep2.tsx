@@ -6,18 +6,16 @@ import { Sparkles, Wand2 } from "lucide-react";
 interface OnboardingStep2Props {
   onNext: () => void;
   onPrevious: () => void;
-  onSkip: () => void;
 }
 
 export function OnboardingStep2({
   onNext,
   onPrevious,
-  onSkip,
 }: OnboardingStep2Props) {
   return (
     <div className="flex flex-col items-center text-center space-y-6">
       {/* Large Icon */}
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#FFA239] to-[#FF5656] flex items-center justify-center shadow-lg shadow-[#FFA239]/25">
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#457b9d] to-[#a8dadc] flex items-center justify-center shadow-lg shadow-[#457b9d]/25">
         <Sparkles size={48} className="text-white" />
       </div>
 
@@ -36,11 +34,11 @@ export function OnboardingStep2({
       {/* Visual Example */}
       <div className="w-full max-w-sm bg-gray-50 rounded-xl p-6 border border-gray-200">
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-[#FFA239]/10 flex items-center justify-center flex-shrink-0">
-            <Wand2 size={20} className="text-[#FFA239]" />
+          <div className="w-10 h-10 rounded-lg bg-[#457b9d]/10 flex items-center justify-center flex-shrink-0">
+            <Wand2 size={20} className="text-[#457b9d]" />
           </div>
           <div className="flex-1 text-left">
-            <div className="h-4 bg-[#FFA239]/20 rounded w-full mb-2"></div>
+            <div className="h-4 bg-[#457b9d]/20 rounded w-full mb-2"></div>
             <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
             <div className="h-3 bg-gray-200 rounded w-5/6"></div>
           </div>
@@ -67,7 +65,7 @@ export function OnboardingStep2({
         </button>
         <button
           onClick={onNext}
-          className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] hover:from-[#FF5656] hover:to-[#FFA239] text-white px-8 py-3 rounded-lg font-semibold shadow-md shadow-[#FFA239]/25 hover:shadow-lg hover:shadow-[#FFA239]/30 transition-all duration-200 active:scale-95"
+          className="bg-[#457b9d] hover:bg-[#3d6d8a] text-white px-8 py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 active:scale-[0.99]"
         >
           Next
         </button>

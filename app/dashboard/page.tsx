@@ -261,7 +261,7 @@ export default function Dashboard() {
 
         <div className="flex-1 flex flex-col">
           <ResumeHeader />
-          <main className="px-6 lg:px-10 py-10 flex-1 overflow-y-auto">
+          <main className="pl-14 pr-4 py-10 sm:pl-6 lg:pl-10 lg:pr-10 flex-1 overflow-y-auto">
             <div className="max-w-5xl mx-auto">
             {/* Subscription Status */}
             <div className="mb-6">
@@ -280,7 +280,7 @@ export default function Dashboard() {
               <button
                 onClick={() => startCreateFlow("classic", "New Resume")}
                 disabled={isCreating}
-                className="bg-gradient-to-r from-[#FFA239] to-[#FF5656] hover:from-[#FF5656] hover:to-[#FFA239] text-white px-6 py-3 rounded-xl font-semibold shadow-md shadow-[#FFA239]/25 hover:shadow-lg hover:shadow-[#FFA239]/30 transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
+                className="bg-[#457b9d] hover:bg-[#1565e0] text-white px-6 py-3 rounded-xl font-semibold shadow-md shadow-[#457b9d]/25 hover:shadow-lg hover:shadow-[#457b9d]/30 transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
               >
                 <Plus size={20} />
                 {isCreating ? "Creating..." : "New Resume"}
@@ -300,7 +300,7 @@ export default function Dashboard() {
                 </div>
                 <button
                   onClick={() => fetchVersions(selectedVersionId)}
-                  className="text-sm text-gray-500 hover:text-[#FF5656] transition-colors duration-200"
+                  className="text-sm text-gray-500 hover:text-[#a8dadc] transition-colors duration-200"
                 >
                   Refresh
                 </button>
@@ -324,7 +324,7 @@ export default function Dashboard() {
                           key={version.id}
                           className={`bg-white rounded-2xl border p-6 flex flex-col gap-4 transition-all duration-200 ${
                             isActive 
-                              ? "border-[#FFA239] shadow-md shadow-[#FFA239]/10" 
+                              ? "border-[#457b9d] shadow-md shadow-[#457b9d]/10" 
                               : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
                           }`}
                         >
@@ -344,7 +344,7 @@ export default function Dashboard() {
                             </div>
                             <button
                               onClick={() => requestDeleteVersion(version)}
-                              className="p-2 rounded-full text-gray-400 hover:text-[#FF5656] hover:bg-red-50 transition"
+                              className="p-2 rounded-full text-gray-400 hover:text-[#a8dadc] hover:bg-[#457b9d]/5 transition"
                               type="button"
                             >
                               <Trash2 size={16} />
@@ -382,7 +382,7 @@ export default function Dashboard() {
                     Choose a template to get started
                   </p>
                 </div>
-                <button className="text-[#FFA239] font-medium hover:text-[#FF5656] hover:underline flex items-center gap-1 transition-colors duration-200">
+                <button className="text-[#457b9d] font-medium hover:text-[#a8dadc] hover:underline flex items-center gap-1 transition-colors duration-200">
                   See All <ChevronDown className="-rotate-90" size={16} />
                 </button>
               </div>
@@ -393,11 +393,11 @@ export default function Dashboard() {
                   onClick={() => startCreateFlow("classic", "Classic Resume")}
                   className="group cursor-pointer"
                 >
-                  <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 h-[340px] flex flex-col items-center justify-center hover:border-[#FFA239] hover:bg-[#FFA239]/5 transition-all duration-200">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#FFA239]/10 group-hover:text-[#FFA239] transition-colors duration-200 mb-4">
+                  <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 h-[340px] flex flex-col items-center justify-center hover:border-[#457b9d] hover:bg-[#457b9d]/5 transition-all duration-200">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#457b9d]/10 group-hover:text-[#457b9d] transition-colors duration-200 mb-4">
                       <Plus size={24} />
                     </div>
-                    <span className="font-semibold text-gray-600 group-hover:text-[#FFA239] transition-colors duration-200">
+                    <span className="font-semibold text-gray-600 group-hover:text-[#457b9d] transition-colors duration-200">
                       Create Blank Resume
                     </span>
                   </div>
@@ -413,9 +413,9 @@ export default function Dashboard() {
                       {/* Mockup of a resume */}
                       <div className="absolute inset-2 bg-white shadow-sm p-2 text-[4px] text-gray-400 overflow-hidden">
                         <div className="flex gap-1">
-                          <div className="w-1/3 bg-[#FF5656] h-full"></div>
+                          <div className="w-1/3 bg-[#a8dadc] h-full"></div>
                           <div className="w-2/3 p-1">
-                            <div className="w-20 h-2 bg-[#FF5656] mb-1"></div>
+                            <div className="w-20 h-2 bg-[#a8dadc] mb-1"></div>
                             <div className="w-full h-1 bg-gray-200 mb-0.5"></div>
                             <div className="w-full h-1 bg-gray-200 mb-0.5"></div>
                             <div className="w-3/4 h-1 bg-gray-200 mb-0.5"></div>
@@ -526,11 +526,11 @@ export default function Dashboard() {
                     <div className="h-[260px] bg-gray-100 overflow-hidden relative">
                       <div className="absolute inset-2 bg-white shadow-sm p-4 text-[4px] text-gray-600 overflow-hidden flex flex-col">
                         <div className="w-full border-b border-gray-300 pb-1 mb-2">
-                          <div className="w-24 h-2 bg-[#FFA239] mb-1"></div>
-                          <div className="w-24 h-2 bg-[#FFA239] mb-1"></div>
+                          <div className="w-24 h-2 bg-[#457b9d] mb-1"></div>
+                          <div className="w-24 h-2 bg-[#457b9d] mb-1"></div>
                         </div>
                         <div className="space-y-2">
-                          <div className="w-16 h-1.5 bg-[#FFA239] mb-1"></div>
+                          <div className="w-16 h-1.5 bg-[#457b9d] mb-1"></div>
                           <div className="w-full h-1 bg-gray-300"></div>
                           <div className="w-full h-1 bg-gray-300"></div>
                         </div>
@@ -597,14 +597,14 @@ export default function Dashboard() {
                   <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
                     <div className="h-[260px] bg-gray-100 overflow-hidden relative">
                       <div className="absolute inset-2 bg-white shadow-sm overflow-hidden flex flex-col">
-                        <div className="w-full h-24 bg-gradient-to-r from-[#FFA239] to-[#FF5656] p-4 flex flex-col justify-center items-center mb-2">
+                        <div className="w-full h-24 bg-gradient-to-r from-[#457b9d] to-[#a8dadc] p-4 flex flex-col justify-center items-center mb-2">
                           <div className="w-32 h-3 bg-white mb-1"></div>
                           <div className="w-20 h-1 bg-white opacity-70"></div>
                         </div>
                         <div className="p-4 space-y-2">
                           <div className="flex justify-center gap-1 mb-2">
-                            <div className="w-8 h-2 rounded-full border border-[#FFA239]"></div>
-                            <div className="w-8 h-2 rounded-full border border-[#FFA239]"></div>
+                            <div className="w-8 h-2 rounded-full border border-[#457b9d]"></div>
+                            <div className="w-8 h-2 rounded-full border border-[#457b9d]"></div>
                           </div>
                           <div className="w-full h-1 bg-gray-300"></div>
                           <div className="w-full h-1 bg-gray-300"></div>
@@ -616,7 +616,7 @@ export default function Dashboard() {
                         Bold Creative
                       </h3>
                       <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-[#FF5656]/10 text-[#FF5656] rounded-full font-medium">
+                        <span className="px-2 py-0.5 bg-[#a8dadc]/10 text-[#a8dadc] rounded-full font-medium">
                           Impactful
                         </span>
                       </div>
@@ -950,7 +950,7 @@ export default function Dashboard() {
                   type="text"
                   value={createTitle}
                   onChange={(e) => setCreateTitle(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#FFA239] focus:ring-offset-2 transition-all duration-200"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#457b9d] focus:ring-offset-2 transition-all duration-200"
                   placeholder="e.g. Product Manager CV"
                 />
                 {createError && (
@@ -965,7 +965,7 @@ export default function Dashboard() {
                 <select
                   value={createTemplate}
                   onChange={(e) => setCreateTemplate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#FFA239] focus:ring-offset-2 transition-all duration-200"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#457b9d] focus:ring-offset-2 transition-all duration-200"
                 >
                   {templateOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -987,7 +987,7 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={handleConfirmCreate}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#FFA239] to-[#FF5656] text-white font-semibold shadow-md shadow-[#FFA239]/25 hover:shadow-lg hover:shadow-[#FFA239]/30 transition-all duration-200 active:scale-95"
+                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#457b9d] to-[#a8dadc] text-white font-semibold shadow-md shadow-[#457b9d]/25 hover:shadow-lg hover:shadow-[#457b9d]/30 transition-all duration-200 active:scale-95"
               >
                 Create
               </button>

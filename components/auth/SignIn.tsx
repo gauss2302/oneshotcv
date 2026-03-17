@@ -70,7 +70,7 @@ export function SignIn() {
                         placeholder="johndoe@gmail.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="h-12 border-gray-300 focus:border-[#FFA239] focus:ring-[#FFA239]/20"
+                        className="h-12 border-[#a8dadc] focus:border-[#457b9d] focus:ring-[#457b9d]/20"
                     />
                 </div>
 
@@ -85,7 +85,7 @@ export function SignIn() {
                             placeholder="••••••••"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="h-12 pr-12 border-gray-300 focus:border-[#FFA239] focus:ring-[#FFA239]/20"
+                            className="h-12 pr-12 border-[#a8dadc] focus:border-[#457b9d] focus:ring-[#457b9d]/20"
                         />
                         <button
                             type="button"
@@ -96,7 +96,7 @@ export function SignIn() {
                         </button>
                     </div>
                     <div className="mt-2 text-right">
-                        <Link href="/forgot-password" className="text-sm text-[#FFA239] hover:text-[#FF5656] transition-colors">
+                        <Link href="/forgot-password" className="text-sm text-[#457b9d] hover:underline transition-colors">
                             Forgot Password?
                         </Link>
                     </div>
@@ -105,7 +105,7 @@ export function SignIn() {
                 <Button
                     onClick={handleSignIn}
                     disabled={loading}
-                    className="w-full h-12 bg-gradient-to-r from-[#FFA239] to-[#FF5656] hover:from-[#FF5656] hover:to-[#FFA239] text-white font-semibold rounded-xl transition-all duration-300"
+                    className="w-full h-12"
                 >
                     {loading ? (
                         <span className="flex items-center gap-2">
@@ -131,13 +131,13 @@ export function SignIn() {
                 <div className="flex items-center justify-center gap-4">
                     <button
                         onClick={() => handleSocialSignIn("github")}
-                        className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-[#8CE4FF] hover:bg-[#8CE4FF]/10 flex items-center justify-center transition-all"
+                        className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-[#a8dadc] hover:bg-[#a8dadc]/10 flex items-center justify-center transition-all"
                     >
                         <Github size={24} className="text-gray-700" />
                     </button>
                     <button
                         onClick={() => handleSocialSignIn("google")}
-                        className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-[#8CE4FF] hover:bg-[#8CE4FF]/10 flex items-center justify-center transition-all"
+                        className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-[#a8dadc] hover:bg-[#a8dadc]/10 flex items-center justify-center transition-all"
                     >
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -148,7 +148,7 @@ export function SignIn() {
                     </button>
                     <button
                         onClick={() => handleSocialSignIn("linkedin")}
-                        className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-[#8CE4FF] hover:bg-[#8CE4FF]/10 flex items-center justify-center transition-all"
+                        className="w-12 h-12 rounded-full border-2 border-gray-300 hover:border-[#a8dadc] hover:bg-[#a8dadc]/10 flex items-center justify-center transition-all"
                     >
                         <Linkedin size={24} className="text-gray-700" />
                     </button>
@@ -156,8 +156,8 @@ export function SignIn() {
 
                 <div className="text-center mt-6">
                     <p className="text-sm text-gray-600">
-                        Don't have an account?{" "}
-                        <Link href="/register" className="font-semibold text-[#FFA239] hover:text-[#FF5656] transition-colors">
+                        Don&apos;t have an account?{" "}
+                        <Link href="/register" className="font-semibold text-[#457b9d] hover:underline transition-colors">
                             Sign up
                         </Link>
                     </p>

@@ -13,7 +13,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 async function run() {
   const url = process.env.DATABASE_URL;
   if (!url) {
-    console.error("DATABASE_URL is not set. Skipping migrations.");
     process.exit(0);
   }
 
@@ -24,9 +23,7 @@ async function run() {
     await migrate(db, {
       migrationsFolder: path.join(__dirname, "..", "drizzle"),
     });
-    console.log("Migrations completed.");
-  } catch (err) {
-    console.error("Migration failed:", err);
+  } catch {
     process.exit(1);
   } finally {
     await pool.end();
