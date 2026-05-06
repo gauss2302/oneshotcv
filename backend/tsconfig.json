@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true,
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "@contracts/*": [
+        "../packages/contracts/src/*"
+      ]
+    }
+  },
+  "include": [
+    "src/**/*.ts",
+    "vitest.config.ts",
+    "../packages/contracts/src/**/*.ts"
+  ]
+}

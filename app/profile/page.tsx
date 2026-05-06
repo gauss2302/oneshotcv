@@ -18,6 +18,7 @@ import {
   Sparkles,
   FolderOpen,
 } from "lucide-react";
+import { fetchResumeList } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -57,8 +58,7 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchResumes = async () => {
       try {
-        const res = await fetch("/api/resume/list");
-        const data = await res.json();
+        const data = await fetchResumeList();
         setResumes(data.resumes ?? []);
       } catch (error) {
         logger.error(
