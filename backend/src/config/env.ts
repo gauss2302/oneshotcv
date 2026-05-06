@@ -25,6 +25,11 @@ const backendEnvSchema = z.object({
   MINIO_SECRET_KEY: z.string().optional(),
   MINIO_BUCKET_NAME: z.string().optional(),
   NEXT_PUBLIC_MINIO_PUBLIC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  POLAR_ACCESS_TOKEN: z.string().optional(),
+  POLAR_WEBHOOK_SECRET: z.string().optional(),
+  POLAR_ORGANIZATION_ID: z.string().optional(),
+  POLAR_PRODUCT_PRICE_ID: z.string().optional(),
 });
 
 export type BackendEnv = z.infer<typeof backendEnvSchema>;

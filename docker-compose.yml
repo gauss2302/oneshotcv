@@ -1,4 +1,42 @@
 services:
+  backend:
+    image: node:20-alpine
+    container_name: resume-constructor-backend
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./:/app
+    command: sh -c "npm ci && npm run backend:start"
+    ports:
+      - "4000:4000"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
+      - FRONTEND_ORIGIN=http://localhost:3000
+      - AUTH_PUBLIC_URL=http://localhost:4000
+      - INDEPENDENT_BACKEND_URL=http://backend:4000
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - MINIO_ENDPOINT=minio
+      - MINIO_PORT=9000
+      - MINIO_USE_SSL=false
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin123
+      - MINIO_BUCKET_NAME=resume-photos
+      - NEXT_PUBLIC_MINIO_PUBLIC_URL=http://localhost:9000
+      - POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN:-}
+      - POLAR_WEBHOOK_SECRET=${POLAR_WEBHOOK_SECRET:-}
+      - POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID:-}
+      - POLAR_PRODUCT_PRICE_ID=${POLAR_PRODUCT_PRICE_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - app-network
+
   app:
     build:
       context: .
@@ -21,7 +59,10 @@ services:
       - MINIO_SECRET_KEY=minioadmin123
       - MINIO_BUCKET_NAME=resume-photos
       - NEXT_PUBLIC_MINIO_PUBLIC_URL=http://localhost:9000
+      - INDEPENDENT_BACKEND_URL=http://backend:4000
     depends_on:
+      backend:
+        condition: service_started
       postgres:
         condition: service_healthy
       minio:

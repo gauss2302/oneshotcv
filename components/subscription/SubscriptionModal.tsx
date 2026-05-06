@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Check, Download, Sparkles } from "lucide-react";
+import { createSubscriptionCheckout } from "@/lib/api/subscriptions";
 import { logger } from "@/lib/logger";
 
 interface SubscriptionModalProps {
@@ -33,16 +34,7 @@ export function SubscriptionModal({
   const handleSubscribe = async () => {
     try {
       setIsCreatingCheckout(true);
-      const response = await fetch("/api/subscription/checkout", {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to create checkout session");
-      }
-
-      const data = await response.json();
+      const data = await createSubscriptionCheckout();
       if (data.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       }

@@ -94,6 +94,11 @@ docker build -t resume-constructor .
 docker-compose up -d
 ```
 
+The compose stack now starts **two application services**:
+
+- `app` - Next.js frontend/BFF compatibility layer on port `3000`
+- `backend` - independent Fastify backend on port `4000`
+
 ### Dokploy Deployment
 
 1. **Create a new application** in Dokploy
@@ -199,6 +204,9 @@ The repository now includes a standalone backend implementation under `backend/`
 - Better Auth mounted in Fastify
 - Health checks
 - Resume list / load / create / update / delete APIs
+- Photo upload / library / attach / detach / crop / delete APIs
+- Onboarding status / completion APIs
+- Subscription status / checkout / webhook APIs
 - Shared API contracts in `packages/contracts/`
 
 ### Local backend environment
@@ -208,6 +216,8 @@ The backend reads the existing database/auth variables and also supports:
 - `INDEPENDENT_BACKEND_URL` - internal backend origin, defaults to `http://localhost:4000`
 - `FRONTEND_ORIGIN` - trusted frontend origin for auth/CORS
 - `AUTH_PUBLIC_URL` - public auth base URL used by Better Auth callbacks
+- `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_ORGANIZATION_ID`, `POLAR_PRODUCT_PRICE_ID`
+  - optional payment configuration for subscription flows
 
 ### Compatibility rollout
 
@@ -217,6 +227,9 @@ The existing Next.js route handlers for:
 - `/api/health`
 - `/api/resume`
 - `/api/resume/list`
+- `/api/photos/*`
+- `/api/user/onboarding/*`
+- `/api/subscription/*`
 
 have been reduced to thin proxies, so the frontend can continue calling the same URLs while the real logic executes inside the independent backend service.
 
