@@ -1,3 +1,5 @@
+import { webcrypto } from "node:crypto";
+
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
@@ -6,6 +8,10 @@ import { getAuthBaseUrl, getTrustedOrigins } from "@/config/env";
 
 const isProduction = process.env.NODE_ENV === "production";
 const authBaseUrl = getAuthBaseUrl();
+
+if (!globalThis.crypto) {
+  globalThis.crypto = webcrypto as Crypto;
+}
 
 const socialProviders = {
   ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET

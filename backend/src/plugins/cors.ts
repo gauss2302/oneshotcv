@@ -1,11 +1,11 @@
 import fastifyCors from "@fastify/cors";
-import type { FastifyInstance } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 
 import { getTrustedOrigins } from "@/config/env";
 
-export async function registerCorsPlugin(app: FastifyInstance): Promise<void> {
+export const registerCorsPlugin: FastifyPluginAsync = async (app) => {
   await app.register(fastifyCors, {
     credentials: true,
     origin: getTrustedOrigins(),
   });
-}
+};

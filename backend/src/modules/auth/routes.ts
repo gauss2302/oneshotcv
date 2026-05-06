@@ -15,8 +15,12 @@ function buildAuthRequestBody(
     return undefined;
   }
 
-  if (typeof body === "string" || body instanceof Uint8Array) {
+  if (typeof body === "string") {
     return body;
+  }
+
+  if (body instanceof Uint8Array) {
+    return Buffer.from(body);
   }
 
   if (contentType?.includes("application/x-www-form-urlencoded") && typeof body === "object") {

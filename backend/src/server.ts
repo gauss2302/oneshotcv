@@ -11,7 +11,7 @@ async function start(): Promise<void> {
       port: env.PORT,
     });
   } catch (error) {
-    app.log.error(error);
+    console.error(error);
     process.exit(1);
   }
 }

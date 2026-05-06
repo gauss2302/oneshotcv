@@ -47,6 +47,9 @@ const DEFAULT_DESIGN_SETTINGS: ResumeContent["designSettings"] = {
 
 export function mapResumeRecordToDocument(resume: ResumeRecord): ResumeDocument {
   const resumePhoto = resume.resumePhoto?.photo;
+  const resumePhotoUrl = resume.resumePhoto
+    ? getBackendPublicFileUrl(resume.resumePhoto.processedPath)
+    : null;
 
   return {
     id: resume.id,
@@ -61,11 +64,11 @@ export function mapResumeRecordToDocument(resume: ResumeRecord): ResumeDocument 
         title: resume.professionalTitle ?? "",
         location: "",
         photo:
-          resume.resumePhoto && resumePhoto
+          resume.resumePhoto && resumePhoto && resumePhotoUrl
             ? {
                 id: resumePhoto.id,
                 resumePhotoId: resume.resumePhoto.id,
-                url: getBackendPublicFileUrl(resume.resumePhoto.processedPath) ?? "",
+                url: resumePhotoUrl,
                 fileName: resumePhoto.fileName,
                 fileSize: resumePhoto.fileSize,
                 mimeType: resumePhoto.mimeType,

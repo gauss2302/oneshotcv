@@ -12,11 +12,11 @@ export async function buildBackendApp(options: FastifyServerOptions = {}) {
     ...options,
   });
 
-  await registerCookiePlugin(app);
-  await registerCorsPlugin(app);
-  await registerBackendAuthRoutes(app);
-  await registerHealthRoutes(app);
-  await registerResumeRoutes(app);
+  await app.register(registerCookiePlugin);
+  await app.register(registerCorsPlugin);
+  await app.register(registerBackendAuthRoutes);
+  await app.register(registerHealthRoutes);
+  await app.register(registerResumeRoutes);
 
   return app;
 }

@@ -178,6 +178,10 @@ Health check endpoint: `GET /api/health`
 ### Development Scripts
 
 - `npm run dev` - Start development server
+- `npm run backend:dev` - Start the independent backend service on port 4000
+- `npm run backend:start` - Run the independent backend service once
+- `npm run backend:typecheck` - Type-check backend sources
+- `npm run backend:test` - Run backend Vitest checks
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
@@ -185,6 +189,36 @@ Health check endpoint: `GET /api/health`
 - `npm run db:studio` - Open Drizzle Studio
 - `npm run db:generate` - Generate migration files
 - `npm run db:migrate` - Run migrations
+
+## Independent Backend (In Progress)
+
+The repository now includes a standalone backend implementation under `backend/`.
+
+### Current backend scope
+
+- Better Auth mounted in Fastify
+- Health checks
+- Resume list / load / create / update / delete APIs
+- Shared API contracts in `packages/contracts/`
+
+### Local backend environment
+
+The backend reads the existing database/auth variables and also supports:
+
+- `INDEPENDENT_BACKEND_URL` - internal backend origin, defaults to `http://localhost:4000`
+- `FRONTEND_ORIGIN` - trusted frontend origin for auth/CORS
+- `AUTH_PUBLIC_URL` - public auth base URL used by Better Auth callbacks
+
+### Compatibility rollout
+
+The existing Next.js route handlers for:
+
+- `/api/auth/*`
+- `/api/health`
+- `/api/resume`
+- `/api/resume/list`
+
+have been reduced to thin proxies, so the frontend can continue calling the same URLs while the real logic executes inside the independent backend service.
 
 ## Polar Payment Integration
 

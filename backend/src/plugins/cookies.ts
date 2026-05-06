@@ -1,6 +1,6 @@
 import fastifyCookie from "@fastify/cookie";
-import type { FastifyInstance } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 
-export async function registerCookiePlugin(app: FastifyInstance): Promise<void> {
+export const registerCookiePlugin: FastifyPluginAsync = async (app) => {
   await app.register(fastifyCookie);
-}
+};
