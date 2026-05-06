@@ -1,0 +1,11 @@
+{
+  "name": "resume-constructor-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ../node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json src/server.ts",
+    "start": "node ../node_modules/tsx/dist/cli.mjs --tsconfig tsconfig.json src/server.ts",
+    "typecheck": "node ../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit",
+    "test": "node ../node_modules/vitest/vitest.mjs --config vitest.config.ts run"
+  }
+}
