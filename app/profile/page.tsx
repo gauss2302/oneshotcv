@@ -18,6 +18,7 @@ import {
   Sparkles,
   FolderOpen,
 } from "lucide-react";
+import { deletePhoto, fetchPhotoLibrary } from "@/lib/api/photos";
 import { fetchResumeList } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
 import { useRouter } from "next/navigation";
@@ -77,9 +78,8 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchPhotos = async () => {
       try {
-        const res = await fetch("/api/photos/library");
-        const data = await res.json();
-        setPhotos(data.photos ?? []);
+        const photos = await fetchPhotoLibrary();
+        setPhotos(photos);
       } catch (error) {
         logger.error(
           "Failed to fetch photos",
@@ -124,11 +124,9 @@ export default function ProfilePage() {
 
     setDeletingPhotoId(photoId);
     try {
-      const res = await fetch(`/api/photos/${photoId}?force=true`, {
-        method: "DELETE",
-      });
+      const result = await deletePhoto(photoId, true);
 
-      if (res.ok) {
+      if (result.success) {
         setPhotos((prev) => prev.filter((p) => p.id !== photoId));
         if (currentSlide >= photos.length - 1) {
           setCurrentSlide(Math.max(0, photos.length - 2));

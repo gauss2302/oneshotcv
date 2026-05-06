@@ -38,9 +38,11 @@ export async function proxyToBackend(
   headers.set("x-forwarded-host", incomingUrl.host);
   headers.set("x-forwarded-proto", incomingUrl.protocol.replace(":", ""));
 
-  const body = METHODS_WITHOUT_BODY.has(request.method)
-    ? undefined
-    : await request.text();
+  let body: BodyInit | undefined;
+  if (!METHODS_WITHOUT_BODY.has(request.method)) {
+    const buffer = Buffer.from(await request.arrayBuffer());
+    body = buffer.length > 0 ? buffer : undefined;
+  }
 
   const response = await fetch(targetUrl, {
     method: request.method,

@@ -3,18 +3,16 @@
 import React, { useState, useRef } from "react";
 import { Upload, X, Crop, Loader2, ImageIcon } from "lucide-react";
 import { useCVStore } from "@/store/useCVStore";
+import {
+  attachPhoto,
+  detachPhoto,
+  uploadPhoto,
+} from "@/lib/api/photos";
 import { PhotoCropModal } from "./PhotoCropModal";
 import { PhotoLibraryModal } from "./PhotoLibraryModal";
 import { templateSupportsPhoto } from "@/lib/template-config";
 import { logger } from "@/lib/logger";
-
-interface LibraryPhoto {
-  id: string;
-  fileName: string;
-  originalUrl: string;
-  width: number;
-  height: number;
-}
+import type { LibraryPhoto } from "@contracts/photo";
 
 interface CropSelection {
   x: number;
@@ -79,20 +77,7 @@ export const PhotoUpload: React.FC = () => {
     // Upload to library first
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await fetch("/api/photos/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Upload failed");
-      }
-
-      const data = await response.json();
+      const data = await uploadPhoto(file);
 
       // Create temp photo object and show cropper
       const imageUrl = URL.createObjectURL(file);
@@ -100,9 +85,11 @@ export const PhotoUpload: React.FC = () => {
       setTempPhoto({
         id: data.photo.id,
         fileName: data.photo.fileName,
+        fileSize: data.photo.fileSize,
         originalUrl: imageUrl,
         width: data.photo.width,
         height: data.photo.height,
+        createdAt: new Date().toISOString(),
       });
       setShowCropper(true);
     } catch (error) {
@@ -149,24 +136,12 @@ export const PhotoUpload: React.FC = () => {
     }
 
     try {
-      const response = await fetch("/api/photos/attach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          photoId: tempPhoto.id,
-          resumeId,
-          cropData,
-          templateId: selectedTemplate,
-        }),
+      const data = await attachPhoto({
+        photoId: tempPhoto.id,
+        resumeId,
+        cropData,
+        templateId: selectedTemplate,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || "Failed to attach photo";
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
 
       // Update store with photo info
       updatePersonal({
@@ -217,15 +192,7 @@ export const PhotoUpload: React.FC = () => {
         payload.photoId = personalInfo.photo.id;
       }
 
-      const response = await fetch("/api/photos/detach", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to remove photo");
-      }
+      await detachPhoto(payload);
 
       updatePersonal({ photo: undefined });
       resetTempState();
@@ -251,9 +218,11 @@ export const PhotoUpload: React.FC = () => {
     setTempPhoto({
       id: personalInfo.photo.id,
       fileName: personalInfo.photo.fileName,
+      fileSize: personalInfo.photo.fileSize,
       originalUrl: personalInfo.photo.url,
       width: 0,
       height: 0,
+      createdAt: new Date().toISOString(),
     });
     setShowCropper(true);
   };
