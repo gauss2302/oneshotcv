@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { fetchSubscriptionStatus } from "@/lib/api/subscriptions";
 import { logger } from "@/lib/logger";
 
 interface SubscriptionStatusProps {
@@ -25,13 +26,8 @@ export function SubscriptionStatus({ className = "" }: SubscriptionStatusProps) 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const response = await fetch("/api/subscription/status", {
-          credentials: "include",
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setSubscription(data);
-        }
+        const data = await fetchSubscriptionStatus();
+        setSubscription(data);
       } catch (error) {
         logger.error(
           "Failed to fetch subscription status",

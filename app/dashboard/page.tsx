@@ -11,13 +11,12 @@ import { authClient } from "@/lib/auth/auth-client";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus";
 import { SubscriptionModal } from "@/components/subscription/SubscriptionModal";
+import { fetchOnboardingStatus } from "@/lib/api/onboarding";
+import { deleteResume, fetchResumeList, saveResume } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
+import type { ResumeSummary } from "@contracts/resume";
 
-interface ResumeVersion {
-  id: string;
-  title: string;
-  updatedAt: string | null;
-}
+type ResumeVersion = ResumeSummary;
 
 const templateOptions = [
   { id: "classic", label: "Classic" },
@@ -62,9 +61,7 @@ export default function Dashboard() {
   const fetchVersions = useCallback(async (selectedId?: string | null) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/resume/list", { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch resumes");
-      const data = await res.json();
+      const data = await fetchResumeList();
       setVersions(data.resumes ?? []);
       setSelectedVersionId(selectedId ?? data.resumes?.[0]?.id ?? null);
     } catch (error) {
@@ -109,20 +106,11 @@ export default function Dashboard() {
 
       // Check database via API
       try {
-        const res = await fetch("/api/user/onboarding/status", {
-          cache: "no-store",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.hasCompletedOnboarding) {
-            // Update localStorage for future checks
-            localStorage.setItem("onboarding_completed", "true");
-            setShowOnboarding(false);
-          } else {
-            setShowOnboarding(true);
-          }
+        const data = await fetchOnboardingStatus();
+        if (data.hasCompletedOnboarding) {
+          localStorage.setItem("onboarding_completed", "true");
+          setShowOnboarding(false);
         } else {
-          // If API fails, show onboarding (better UX for new users)
           setShowOnboarding(true);
         }
       } catch (error) {
@@ -188,13 +176,7 @@ export default function Dashboard() {
           title: title || "New Resume",
           createNew: true,
         };
-        const response = await fetch("/api/resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!response.ok) throw new Error("Failed to create resume");
-        const result = await response.json();
+        const result = await saveResume(payload);
         await fetchVersions(result.id);
         router.push(`/editor?resumeId=${result.id}`);
       } catch (error) {
@@ -217,12 +199,7 @@ export default function Dashboard() {
     if (!resumeToDelete) return;
     try {
       setIsDeleting(true);
-      const response = await fetch("/api/resume", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: resumeToDelete.id }),
-      });
-      if (!response.ok) throw new Error("Failed to delete resume");
+      await deleteResume(resumeToDelete.id);
       const nextSelected =
         resumeToDelete.id === selectedVersionId ? null : selectedVersionId;
       await fetchVersions(nextSelected);

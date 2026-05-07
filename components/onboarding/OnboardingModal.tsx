@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { X } from "lucide-react";
+import { completeOnboarding } from "@/lib/api/onboarding";
 import { logger } from "@/lib/logger";
 import { OnboardingStep1 } from "./OnboardingStep1";
 import { OnboardingStep2 } from "./OnboardingStep2";
@@ -26,15 +27,7 @@ export function OnboardingModal({
     localStorage.setItem("onboarding_completed", "true");
 
     try {
-      const response = await fetch("/api/user/onboarding/complete", {
-        method: "POST",
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to update onboarding status: ${response.status}`
-        );
-      }
+      await completeOnboarding();
     } catch (error) {
       logger.error(
         "Failed to update onboarding status",

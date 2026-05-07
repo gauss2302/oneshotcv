@@ -1,4 +1,9 @@
-import { auth } from "@/lib/auth/auth";
-import { toNextJsHandler } from "better-auth/next-js";
+import { proxyToBackend } from "@/lib/backend-proxy";
 
-export const { GET, POST } = toNextJsHandler(auth);
+export async function GET(request: Request) {
+  return proxyToBackend(request);
+}
+
+export async function POST(request: Request) {
+  return proxyToBackend(request);
+}

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useCVStore } from "@/store/useCVStore";
 import { authClient } from "@/lib/auth/auth-client";
 import { useSearchParams } from "next/navigation";
+import { fetchResume, saveResume } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
 
 const SAVE_DEBOUNCE_MS = 1500;
@@ -77,35 +78,29 @@ export function useResumeSync() {
       }
 
       try {
-        const query = resumeIdFromUrl ? `?id=${resumeIdFromUrl}` : "";
-        const res = await fetch(`/api/resume${query}`);
-        const data = await res.json();
+        const data = await fetchResume(resumeIdFromUrl ?? undefined);
 
         if (isCancelled) return;
 
-        if (data.content) {
+        if ("content" in data && data.content) {
           setResume(data.content);
           setResumeId(data.id);
           lastLoadedResumeId.current = data.id;
         } else if (!resumeIdFromUrl) {
           // Create new resume
           const current = useCVStore.getState();
-          const createRes = await fetch("/api/resume", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              content: {
-                personalInfo: { ...current.personalInfo, photo: undefined },
-                education: current.education,
-                experience: current.experience,
-                skills: current.skills,
-                selectedTemplate: current.selectedTemplate,
-                designSettings: current.designSettings,
-              },
-              createNew: true,
-            }),
+          const createData = await saveResume({
+            content: {
+              personalInfo: { ...current.personalInfo, photo: undefined },
+              education: current.education,
+              experience: current.experience,
+              skills: current.skills,
+              selectedTemplate: current.selectedTemplate,
+              designSettings: current.designSettings,
+            },
+            createNew: true,
           });
-          const createData = await createRes.json();
+
           if (createData.id) {
             setResumeId(createData.id);
             lastLoadedResumeId.current = createData.id;
@@ -167,25 +162,17 @@ export function useResumeSync() {
           photo: undefined,
         };
 
-        const response = await fetch("/api/resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: targetResumeId,
-            content: {
-              personalInfo: personalInfoWithoutPhoto,
-              education: state.education,
-              experience: state.experience,
-              skills: state.skills,
-              selectedTemplate: state.selectedTemplate,
-              designSettings: state.designSettings,
-            },
-          }),
+        await saveResume({
+          id: targetResumeId,
+          content: {
+            personalInfo: personalInfoWithoutPhoto,
+            education: state.education,
+            experience: state.experience,
+            skills: state.skills,
+            selectedTemplate: state.selectedTemplate,
+            designSettings: state.designSettings,
+          },
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to save");
-        }
 
         // Only mark as saved if we're still on the same resume
         if (useCVStore.getState().resumeId === targetResumeId) {
@@ -258,20 +245,16 @@ export function useResumeSync() {
           ...state.personalInfo,
           photo: undefined,
         };
-        fetch("/api/resume", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: state.resumeId,
-            content: {
-              personalInfo: personalInfoWithoutPhoto,
-              education: state.education,
-              experience: state.experience,
-              skills: state.skills,
-              selectedTemplate: state.selectedTemplate,
-              designSettings: state.designSettings,
-            },
-          }),
+        saveResume({
+          id: state.resumeId,
+          content: {
+            personalInfo: personalInfoWithoutPhoto,
+            education: state.education,
+            experience: state.experience,
+            skills: state.skills,
+            selectedTemplate: state.selectedTemplate,
+            designSettings: state.designSettings,
+          },
         }).catch((error) => {
           logger.error(
             "Failed to save resume on cleanup",

@@ -2,16 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { fetchPhotoLibrary } from "@/lib/api/photos";
 import { logger } from "@/lib/logger";
-
-interface LibraryPhoto {
-  id: string;
-  fileName: string;
-  originalUrl: string;
-  width: number;
-  height: number;
-  createdAt: Date;
-}
+import type { LibraryPhoto } from "@contracts/photo";
 
 interface PhotoLibraryModalProps {
   onSelect: (photo: LibraryPhoto) => void;
@@ -33,14 +26,8 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
   const loadPhotos = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/photos/library');
-
-      if (!response.ok) {
-        throw new Error('Failed to load photo library');
-      }
-
-      const data = await response.json();
-      setPhotos(data.photos);
+      const photos = await fetchPhotoLibrary();
+      setPhotos(photos);
     } catch (err) {
       logger.error(
         "Error loading photos",
