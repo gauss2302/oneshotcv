@@ -99,7 +99,11 @@ export function DashboardSidebar({
   const closeDrawer = () => setDrawerOpen(false);
 
   useEffect(() => {
-    setDrawerOpen(false);
+    const timeoutId = window.setTimeout(() => {
+      setDrawerOpen(false);
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [pathname]);
 
   const sidebarContent = (

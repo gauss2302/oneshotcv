@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { X, Loader2, Image as ImageIcon } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from "react";
+import { X, Loader2, Image as ImageIcon } from "lucide-react";
 import { fetchPhotoLibrary } from "@/lib/api/photos";
 import { logger } from "@/lib/logger";
 import type { LibraryPhoto } from "@contracts/photo";
@@ -19,11 +19,7 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadPhotos();
-  }, []);
-
-  const loadPhotos = async () => {
+  const loadPhotos = useCallback(async () => {
     try {
       setLoading(true);
       const photos = await fetchPhotoLibrary();
@@ -37,7 +33,15 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadPhotos();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [loadPhotos]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
