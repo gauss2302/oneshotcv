@@ -75,17 +75,25 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetchVersions();
+    const timeoutId = window.setTimeout(() => {
+      void fetchVersions();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [fetchVersions]);
 
   // Check for subscription query parameter
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("subscription") === "required") {
-      setShowSubscriptionModal(true);
-      // Clean up URL
-      window.history.replaceState({}, "", "/dashboard");
-    }
+    const timeoutId = window.setTimeout(() => {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("subscription") === "required") {
+        setShowSubscriptionModal(true);
+        // Clean up URL
+        window.history.replaceState({}, "", "/dashboard");
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, []);
 
   // Check onboarding status

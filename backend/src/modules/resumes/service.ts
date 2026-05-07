@@ -1,4 +1,4 @@
-import type { ResumeDocument, ResumeSummary, SaveResumeRequest } from "@contracts/resume";
+import type { ResumeDocument, ResumeSummary, SaveResumeRequest } from "@/contracts/resume";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/infrastructure/db/client";

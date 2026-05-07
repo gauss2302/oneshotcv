@@ -3,7 +3,7 @@ import type {
   ResumeDocument,
   ResumeSummary,
   SaveResumeRequest,
-} from "@contracts/resume";
+} from "@/contracts/resume";
 
 import { getBackendPublicFileUrl } from "@/infrastructure/storage/minio";
 import {

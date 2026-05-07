@@ -9,12 +9,11 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.join(__dirname, "src"),
-      "@contracts": path.join(__dirname, "../packages/contracts/src"),
     },
   },
   test: {
     environment: "node",
-    include: ["backend/src/**/*.test.ts"],
+    include: ["src/**/*.test.ts"],
     passWithNoTests: false,
   },
 });

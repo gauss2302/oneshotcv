@@ -1,139 +1,93 @@
 services:
   backend:
-    image: node:20-alpine
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: resume-constructor-backend
-    restart: always
-    working_dir: /app
-    volumes:
-      - ./:/app
-    command: sh -c "npm ci && npm run backend:start"
-    ports:
-      - "4000:4000"
+    restart: unless-stopped
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      - FRONTEND_ORIGIN=http://localhost:3000
-      - AUTH_PUBLIC_URL=http://localhost:4000
-      - INDEPENDENT_BACKEND_URL=http://backend:4000
-      - NEXT_PUBLIC_APP_URL=http://localhost:3000
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_USE_SSL=false
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin123
-      - MINIO_BUCKET_NAME=resume-photos
-      - NEXT_PUBLIC_MINIO_PUBLIC_URL=http://localhost:9000
-      - POLAR_ACCESS_TOKEN=${POLAR_ACCESS_TOKEN:-}
-      - POLAR_WEBHOOK_SECRET=${POLAR_WEBHOOK_SECRET:-}
-      - POLAR_ORGANIZATION_ID=${POLAR_ORGANIZATION_ID:-}
-      - POLAR_PRODUCT_PRICE_ID=${POLAR_PRODUCT_PRICE_ID:-}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 4000
+      FRONTEND_ORIGIN: ${PUBLIC_APP_URL:-http://localhost}
+      AUTH_PUBLIC_URL: ${PUBLIC_APP_URL:-http://localhost}
+      INDEPENDENT_BACKEND_URL: http://backend:4000
+      NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
+    expose:
+      - "4000"
     networks:
       - app-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:4000/api/health', (r) => { process.exit(r.statusCode && r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1));",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
 
-  app:
+  frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile
-    container_name: resume-constructor-app
-    restart: always
-    ports:
-      - "3000:3000"
+      args:
+        NEXT_PUBLIC_BACKEND_URL: ${PUBLIC_APP_URL:-http://localhost}
+        NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
+    container_name: resume-constructor-frontend
+    restart: unless-stopped
     env_file:
       - .env
     environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
-      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET}
-      - BETTER_AUTH_URL=${BETTER_AUTH_URL:-http://localhost:3000}
-      - NEXT_PUBLIC_APP_URL=http://localhost:3000
-      - MINIO_ENDPOINT=minio
-      - MINIO_PORT=9000
-      - MINIO_USE_SSL=false
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin123
-      - MINIO_BUCKET_NAME=resume-photos
-      - NEXT_PUBLIC_MINIO_PUBLIC_URL=http://localhost:9000
-      - INDEPENDENT_BACKEND_URL=http://backend:4000
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
+      NODE_ENV: production
+      NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
+      NEXT_PUBLIC_BACKEND_URL: ${PUBLIC_APP_URL:-http://localhost}
+    expose:
+      - "3000"
     depends_on:
       backend:
-        condition: service_started
-      postgres:
-        condition: service_healthy
-      minio:
         condition: service_healthy
     networks:
       - app-network
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: resume-constructor-postgres
-    restart: always
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=resume_constructor
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    networks:
-      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Optional: Drizzle Studio for database management
-  studio:
-    image: node:20-alpine
-    container_name: resume-constructor-studio
-    working_dir: /app
-    volumes:
-      - ./:/app
-    command: npx drizzle-kit studio
-    ports:
-      - "4983:4983"
-    environment:
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/resume_constructor
-    depends_on:
-      - postgres
-    networks:
-      - app-network
-
-  # MinIO for object storage (photos)
-  minio:
-    image: minio/minio:latest
-    container_name: resume-constructor-minio
-    restart: always
-    ports:
-      - "9000:9000" # API
-      - "9001:9001" # Console UI
-    environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin123
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/', (r) => { process.exit(r.statusCode && r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1));",
+        ]
       interval: 30s
-      timeout: 20s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: resume-constructor-nginx
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PORT:-80}:80"
+    volumes:
+      - ./frontend/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
       retries: 3
 
 networks:
   app-network:
     driver: bridge
-
-volumes:
-  postgres_data:
-  minio_data:

@@ -5,7 +5,7 @@ import type {
   DetachPhotoRequest,
   LibraryPhoto,
   RecropPhotoRequest,
-} from "@contracts/photo";
+} from "@/contracts/photo";
 
 import {
   getBackendPublicFileUrl,
