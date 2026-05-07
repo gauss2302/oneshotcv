@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsup src/server.ts src/infrastructure/db/migrate.ts --format esm --target node20 --platform node --packages external --out-dir dist",
+    "build": "tsup src/server.ts src/infrastructure/db/migrate.ts --format esm --target node20 --platform node --out-dir dist",
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest --config vitest.config.ts run",
