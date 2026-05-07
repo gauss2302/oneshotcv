@@ -96,24 +96,22 @@ docker-compose up -d
 
 The compose stack now starts **two application services**:
 
-- `app` - Next.js frontend/BFF compatibility layer on port `3000`
+- `app` - Next.js frontend on port `3000` (API and auth are served by `backend`, see `NEXT_PUBLIC_BACKEND_URL`)
 - `backend` - independent Fastify backend on port `4000`
 
 ### Dokploy Deployment
 
 1. **Create a new application** in Dokploy
 2. **Configure environment variables** via Dokploy UI (use values from `.env.example`)
-3. **Set up health check** endpoint: `/api/health`
+3. **Set up health check** for the **backend** service: `GET /api/health` on the Fastify port (e.g. `http://<backend>:4000/api/health`). The Next.js container image uses the **root page** (`GET /`) for its Docker `HEALTHCHECK` (no API routes in Next).
 4. **Configure domain** and SSL certificates
 5. **Deploy** the application
 
 #### Health Check
 
-The application exposes a health check endpoint at `/api/health` that checks:
-- Database connectivity
-- MinIO storage connectivity
+The **Fastify backend** exposes `GET /api/health` and checks database and MinIO connectivity. Point your orchestrator or load balancer at the backend service for deep health checks.
 
-Dokploy will use this endpoint to monitor application health.
+The **Next.js** production image health check uses `GET /` on port 3000.
 
 ### Database Migrations
 
@@ -152,7 +150,7 @@ npm run db:migrate
 
 The application includes structured logging (JSON format in production) ready for log aggregation services.
 
-Health check endpoint: `GET /api/health`
+Health check (backend): `GET /api/health` on the API service
 
 ### Troubleshooting
 
@@ -171,7 +169,8 @@ Health check endpoint: `GET /api/health`
 #### Authentication Issues
 
 - Verify `BETTER_AUTH_SECRET` is set and at least 32 characters
-- Check `BETTER_AUTH_URL` matches your deployment URL
+- Set `NEXT_PUBLIC_BACKEND_URL` to the public origin of the Fastify API (same host as `AUTH_PUBLIC_URL` in development: e.g. `http://localhost:4000`)
+- Check `BETTER_AUTH_URL` if you still use it in your environment; the auth client uses `NEXT_PUBLIC_BACKEND_URL` for API calls
 - Verify OAuth redirect URIs are configured correctly in provider settings
 
 #### Build Failures
@@ -195,7 +194,7 @@ Health check endpoint: `GET /api/health`
 - `npm run db:generate` - Generate migration files
 - `npm run db:migrate` - Run migrations
 
-## Independent Backend (In Progress)
+## Independent Backend
 
 The repository now includes a standalone backend implementation under `backend/`.
 
@@ -219,21 +218,11 @@ The backend reads the existing database/auth variables and also supports:
 - `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_ORGANIZATION_ID`, `POLAR_PRODUCT_PRICE_ID`
   - optional payment configuration for subscription flows
 
-### Compatibility rollout
+### Frontend ↔ backend
 
-The existing Next.js route handlers for:
+The Next.js app calls the Fastify API and Better Auth **directly** from the browser using `NEXT_PUBLIC_BACKEND_URL` (see `.env.example`). There are no Next.js `app/api` route handlers for those endpoints.
 
-- `/api/auth/*`
-- `/api/health`
-- `/api/resume`
-- `/api/resume/list`
-- `/api/photos/*`
-- `/api/user/onboarding/*`
-- `/api/subscription/*`
-
-have been reduced to thin proxies, so the frontend can continue calling the same URLs while the real logic executes inside the independent backend service.
-
-## Polar Payment Integration
+### Polar Payment Integration
 
 This application integrates with [Polar](https://polar.sh) for subscription-based payments. Users can create and edit CVs for free, but need an active subscription to download PDFs.
 

@@ -4,6 +4,7 @@ import { authClient } from "@/lib/auth/auth-client";
 import { useSearchParams } from "next/navigation";
 import { fetchResume, saveResume } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
+import type { CVState } from "@/types/cv";
 
 const SAVE_DEBOUNCE_MS = 1500;
 
@@ -83,7 +84,7 @@ export function useResumeSync() {
         if (isCancelled) return;
 
         if ("content" in data && data.content) {
-          setResume(data.content);
+          setResume(data.content as Partial<CVState> & { summary?: string });
           setResumeId(data.id);
           lastLoadedResumeId.current = data.id;
         } else if (!resumeIdFromUrl) {

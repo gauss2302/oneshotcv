@@ -9,7 +9,7 @@ import {
   type LibraryPhoto,
 } from "@contracts/photo";
 
-import { apiFetch } from "./client";
+import { apiFetch, resolvePublicApiUrl } from "./client";
 
 export async function uploadPhoto(file: File) {
   const formData = new FormData();
@@ -71,7 +71,7 @@ export async function deletePhoto(photoId: string, force = false) {
       throw error;
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(resolvePublicApiUrl(url), {
       method: "DELETE",
       credentials: "include",
     });
