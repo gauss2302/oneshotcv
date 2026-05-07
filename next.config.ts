@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
   async headers() {
     const isProduction = process.env.NODE_ENV === "production";
     const productionDomain = process.env.NEXT_PUBLIC_PRODUCTION_DOMAIN;
+    const backendOrigin =
+      process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:4000";
 
     return [
       {
@@ -60,6 +62,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
               "connect-src 'self'",
+              backendOrigin,
               productionDomain
                 ? `https://${productionDomain}`
                 : "",

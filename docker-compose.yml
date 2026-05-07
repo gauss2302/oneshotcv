@@ -60,6 +60,7 @@ services:
       - MINIO_BUCKET_NAME=resume-photos
       - NEXT_PUBLIC_MINIO_PUBLIC_URL=http://localhost:9000
       - INDEPENDENT_BACKEND_URL=http://backend:4000
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
     depends_on:
       backend:
         condition: service_started

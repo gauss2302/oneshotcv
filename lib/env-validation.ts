@@ -13,6 +13,7 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
   BETTER_AUTH_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
+  NEXT_PUBLIC_BACKEND_URL: z.string().url().optional(),
 
   // OAuth Providers (optional but validated if provided)
   GOOGLE_CLIENT_ID: z.string().optional(),

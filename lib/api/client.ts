@@ -2,6 +2,19 @@ interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: BodyInit | null;
 }
 
+/**
+ * Public HTTP API base URL (Fastify). The browser calls this host directly; Next.js does not proxy `/api`.
+ */
+export function getPublicApiBase(): string {
+  return process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:4000";
+}
+
+export function resolvePublicApiUrl(path: string): string {
+  const base = getPublicApiBase().replace(/\/$/, "");
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  return `${base}${normalized}`;
+}
+
 function extractErrorMessage(payload: unknown): string | null {
   if (
     payload
@@ -19,7 +32,8 @@ export async function apiFetch<T>(
   path: string,
   options: ApiFetchOptions = {}
 ): Promise<T> {
-  const response = await fetch(path, {
+  const url = resolvePublicApiUrl(path);
+  const response = await fetch(url, {
     credentials: "include",
     ...options,
   });
