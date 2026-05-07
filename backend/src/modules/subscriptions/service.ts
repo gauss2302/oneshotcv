@@ -1,4 +1,4 @@
-import type { SubscriptionStatusResponse } from "@contracts/subscription";
+import type { SubscriptionStatusResponse } from "@/contracts/subscription";
 
 import { getBackendEnv } from "@/config/env";
 import {

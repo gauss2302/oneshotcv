@@ -4,4 +4,4 @@ export {
   detachPhotoRequestSchema,
   photoIdSchema,
   recropPhotoRequestSchema,
-} from "@contracts/photo";
+} from "@/contracts/photo";

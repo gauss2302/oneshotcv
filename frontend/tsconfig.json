@@ -20,7 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@contracts/*": ["./packages/contracts/src/*"]
+      "@contracts/*": ["./contracts/*"]
     }
   },
   "include": [
@@ -31,5 +31,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "backend"]
+  "exclude": ["node_modules"]
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { SaveResumeRequest } from "@contracts/resume";
+import type { SaveResumeRequest } from "@/contracts/resume";
 
 import { mapSaveRequestToResumeValues } from "./mappers";
 

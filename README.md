@@ -1,290 +1,153 @@
 # Resume Constructor
 
-A modern, production-ready resume builder application built with Next.js, PostgreSQL, and MinIO.
+A production-ready resume builder split into two independently deployable applications:
 
-## Features
+- `frontend/` — Next.js client.
+- `backend/` — Fastify API, Better Auth, database access, migrations, subscriptions, and photo processing.
 
-- 🎨 Multiple professional resume templates
-- 📝 Rich text editor with real-time preview
-- 📸 Photo upload and management
-- 🔐 Secure authentication (Email/Password, Google, GitHub, LinkedIn)
-- 💾 Auto-save functionality
-- 📄 PDF export
-- 🎯 Responsive design
+Nginx is the public entry point in production. It serves the frontend at `/` and proxies `/api/*` to the backend.
 
-## Getting Started
+## Repository structure
 
-### Development
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
+```text
+backend/              Fastify server, Drizzle schema, migrations, backend Dockerfile
+frontend/             Next.js app, UI, local API contracts, frontend Dockerfile, nginx config
+docker-compose.yml    Production app stack: nginx, frontend, backend
+.env.example          Production environment template
 ```
 
-### Environment Variables
+Root-level database and migration folders have been removed. The backend now owns the Drizzle schema and migrations.
 
-Copy `.env.example` to `.env` and fill in the required values:
+## Development
+
+Install and run each app from its own directory.
+
+### Backend
+
+```bash
+cd backend
+npm ci
+npm run dev
+```
+
+Useful backend commands:
+
+```bash
+npm run typecheck
+npm test
+npm run build
+npm run db:generate
+npm run db:migrate
+npm run db:check
+```
+
+The backend listens on `PORT` (default `4000`) and exposes `GET /api/health`.
+
+### Frontend
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Useful frontend commands:
+
+```bash
+npm run typecheck
+npm run lint
+npm run build
+```
+
+The frontend uses `NEXT_PUBLIC_BACKEND_URL` for API and Better Auth calls. In production this should usually be the same public origin as the frontend because nginx proxies `/api/*`.
+
+## Production deployment
+
+### Prerequisites
+
+- Docker and Docker Compose.
+- A production PostgreSQL database reachable through `DATABASE_URL`.
+- A production MinIO or S3-compatible object storage endpoint.
+- A strong `BETTER_AUTH_SECRET` with at least 32 characters.
+- Optional OAuth and Polar credentials.
+
+### Configure environment
 
 ```bash
 cp .env.example .env
 ```
 
-See [Environment Variables](#environment-variables) section for details.
+Edit `.env` and set concrete production values. Important variables:
 
-### Database Setup
+- `PUBLIC_APP_URL` — public origin served by nginx, for example `https://resume.example.com`.
+- `DATABASE_URL` — PostgreSQL connection string.
+- `BETTER_AUTH_SECRET` — strong secret, minimum 32 characters.
+- `FRONTEND_ORIGIN` and `AUTH_PUBLIC_URL` — normally the same as `PUBLIC_APP_URL`.
+- `INDEPENDENT_BACKEND_URL` — internal backend origin, normally `http://backend:4000` in Compose.
+- `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_BACKEND_URL` — normally the same as `PUBLIC_APP_URL`.
+- `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_USE_SSL`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY`, `MINIO_BUCKET_NAME`.
+- `NEXT_PUBLIC_MINIO_PUBLIC_URL` — public object-storage URL for rendered photos.
 
-1. Ensure PostgreSQL is running
-2. Run database migrations:
+### Build and start
 
 ```bash
-npm run db:push
+docker compose build
+docker compose up -d
 ```
 
-Or use Drizzle Studio to manage your database:
+The production compose stack contains only application services:
+
+- `nginx` — public port `80`, routes traffic to frontend/backend.
+- `frontend` — internal Next.js service on port `3000`.
+- `backend` — internal Fastify service on port `4000`.
+
+PostgreSQL, MinIO, and other infrastructure services are expected to be provisioned separately for production.
+
+### Routing
+
+Nginx routes:
+
+- `/api/*` → `backend:4000`
+- everything else → `frontend:3000`
+
+This keeps browser API calls and Better Auth on the same public origin while preserving a separated server/client deployment internally.
+
+### Migrations
+
+Backend migrations live in `backend/migrations/`. The backend container runs migrations before starting the Fastify server:
 
 ```bash
-npm run db:studio
+node dist/infrastructure/db/migrate.js && node dist/server.js
 ```
 
-## Production Deployment
-
-### Prerequisites
-
-- Docker and Docker Compose
-- Dokploy (self-hosted) or compatible deployment platform
-- PostgreSQL database
-- MinIO object storage
-
-### Environment Variables
-
-All required environment variables are documented in `.env.example`. Key variables for production:
-
-#### Required
-
-- `NODE_ENV=production`
-- `DATABASE_URL` - PostgreSQL connection string
-- `BETTER_AUTH_SECRET` - At least 32 characters, use a strong random string
-- `NEXT_PUBLIC_APP_URL` - Your production domain URL
-- `MINIO_ENDPOINT`, `MINIO_PORT`, `MINIO_ACCESS_KEY`, `MINIO_SECRET_KEY` - MinIO configuration
-- `MINIO_BUCKET_NAME` - MinIO bucket name
-- `NEXT_PUBLIC_MINIO_PUBLIC_URL` - Public URL for MinIO access
-
-#### Optional
-
-- `NEXT_PUBLIC_PRODUCTION_DOMAIN` - Production domain for CORS and security headers
-- OAuth provider credentials (Google, GitHub, LinkedIn)
-- Polar payment configuration (see [Polar Payment Integration](#polar-payment-integration))
-
-### Docker Deployment
-
-1. Build the Docker image:
+You can also run migrations manually:
 
 ```bash
-docker build -t resume-constructor .
-```
-
-2. Run with Docker Compose:
-
-```bash
-docker-compose up -d
-```
-
-The compose stack now starts **two application services**:
-
-- `app` - Next.js frontend on port `3000` (API and auth are served by `backend`, see `NEXT_PUBLIC_BACKEND_URL`)
-- `backend` - independent Fastify backend on port `4000`
-
-### Dokploy Deployment
-
-1. **Create a new application** in Dokploy
-2. **Configure environment variables** via Dokploy UI (use values from `.env.example`)
-3. **Set up health check** for the **backend** service: `GET /api/health` on the Fastify port (e.g. `http://<backend>:4000/api/health`). The Next.js container image uses the **root page** (`GET /`) for its Docker `HEALTHCHECK` (no API routes in Next).
-4. **Configure domain** and SSL certificates
-5. **Deploy** the application
-
-#### Health Check
-
-The **Fastify backend** exposes `GET /api/health` and checks database and MinIO connectivity. Point your orchestrator or load balancer at the backend service for deep health checks.
-
-The **Next.js** production image health check uses `GET /` on port 3000.
-
-### Database Migrations
-
-Before deploying, ensure database migrations are up to date:
-
-```bash
-npm run db:generate  # Generate migration files
-npm run db:push      # Apply migrations
-```
-
-For production, run migrations as part of your deployment process or manually:
-
-```bash
+cd backend
 npm run db:migrate
 ```
 
-### Security Features
+### Health checks
 
-- ✅ Security headers (CSP, HSTS, X-Frame-Options, etc.)
-- ✅ Rate limiting on API endpoints
-- ✅ Input validation and sanitization
-- ✅ File upload validation (magic number checking)
-- ✅ Secure cookie configuration
-- ✅ CSRF protection
-- ✅ Environment variable validation
+- Public/frontend check: `GET /`
+- Backend deep check: `GET /api/health`
 
-### Performance Optimizations
+`/api/health` verifies database connectivity and checks object storage when MinIO is configured.
 
-- ✅ Database connection pooling
-- ✅ Image optimization (WebP conversion)
-- ✅ Next.js production optimizations
-- ✅ Response compression
-- ✅ Optimized Docker image layers
+## Feature summary
 
-### Monitoring
+- Multiple professional resume templates.
+- Real-time resume editing and preview.
+- Photo upload, crop, and library management.
+- Email/password and OAuth authentication through Better Auth.
+- Auto-save and PDF export.
+- Subscription support through Polar.
+- Structured backend separation for production deployments.
 
-The application includes structured logging (JSON format in production) ready for log aggregation services.
+## Security notes
 
-Health check (backend): `GET /api/health` on the API service
-
-### Troubleshooting
-
-#### Database Connection Issues
-
-- Verify `DATABASE_URL` is correct
-- Check PostgreSQL is accessible from your deployment
-- Ensure SSL mode matches your database configuration
-
-#### MinIO Connection Issues
-
-- Verify MinIO endpoint and port are correct
-- Check MinIO credentials
-- Ensure bucket exists or application has permissions to create it
-
-#### Authentication Issues
-
-- Verify `BETTER_AUTH_SECRET` is set and at least 32 characters
-- Set `NEXT_PUBLIC_BACKEND_URL` to the public origin of the Fastify API (same host as `AUTH_PUBLIC_URL` in development: e.g. `http://localhost:4000`)
-- Check `BETTER_AUTH_URL` if you still use it in your environment; the auth client uses `NEXT_PUBLIC_BACKEND_URL` for API calls
-- Verify OAuth redirect URIs are configured correctly in provider settings
-
-#### Build Failures
-
-- Ensure all required environment variables are set
-- Check Node.js version (requires Node 20+)
-- Verify all dependencies are installed
-
-### Development Scripts
-
-- `npm run dev` - Start development server
-- `npm run backend:dev` - Start the independent backend service on port 4000
-- `npm run backend:start` - Run the independent backend service once
-- `npm run backend:typecheck` - Type-check backend sources
-- `npm run backend:test` - Run backend Vitest checks
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
-- `npm run db:push` - Push database schema changes
-- `npm run db:studio` - Open Drizzle Studio
-- `npm run db:generate` - Generate migration files
-- `npm run db:migrate` - Run migrations
-
-## Independent Backend
-
-The repository now includes a standalone backend implementation under `backend/`.
-
-### Current backend scope
-
-- Better Auth mounted in Fastify
-- Health checks
-- Resume list / load / create / update / delete APIs
-- Photo upload / library / attach / detach / crop / delete APIs
-- Onboarding status / completion APIs
-- Subscription status / checkout / webhook APIs
-- Shared API contracts in `packages/contracts/`
-
-### Local backend environment
-
-The backend reads the existing database/auth variables and also supports:
-
-- `INDEPENDENT_BACKEND_URL` - internal backend origin, defaults to `http://localhost:4000`
-- `FRONTEND_ORIGIN` - trusted frontend origin for auth/CORS
-- `AUTH_PUBLIC_URL` - public auth base URL used by Better Auth callbacks
-- `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_ORGANIZATION_ID`, `POLAR_PRODUCT_PRICE_ID`
-  - optional payment configuration for subscription flows
-
-### Frontend ↔ backend
-
-The Next.js app calls the Fastify API and Better Auth **directly** from the browser using `NEXT_PUBLIC_BACKEND_URL` (see `.env.example`). There are no Next.js `app/api` route handlers for those endpoints.
-
-### Polar Payment Integration
-
-This application integrates with [Polar](https://polar.sh) for subscription-based payments. Users can create and edit CVs for free, but need an active subscription to download PDFs.
-
-### Setup
-
-1. **Create a Polar account** at [polar.sh](https://polar.sh)
-2. **Create a product and price** in your Polar dashboard
-3. **Get your credentials**:
-   - Access Token (for API operations)
-   - Webhook Secret (for verifying webhook signatures)
-   - Organization ID
-   - Product Price ID (the subscription price you want to use)
-
-4. **Configure environment variables**:
-   ```bash
-   POLAR_ACCESS_TOKEN=your-polar-access-token
-   POLAR_WEBHOOK_SECRET=your-polar-webhook-secret
-   POLAR_ORGANIZATION_ID=your-polar-organization-id
-   POLAR_PRODUCT_PRICE_ID=your-polar-product-price-id
-   ```
-
-5. **Set up webhook endpoint**:
-   - In your Polar dashboard, configure the webhook URL: `https://yourdomain.com/api/subscription/webhook`
-   - Use the webhook secret from step 3
-
-6. **Run database migrations** to create subscription tables:
-   ```bash
-   npm run db:push
-   ```
-
-### How It Works
-
-- **Free tier**: Users can create, edit, and preview resumes
-- **Subscription required**: PDF downloads require an active subscription
-- **Automatic sync**: Webhooks automatically sync subscription status
-- **Graceful degradation**: If Polar is not configured, the app works without payment features
-
-### Subscription Status
-
-Users can see their subscription status on the dashboard. The system checks subscription status before allowing PDF downloads.
-
-### Webhook Events Handled
-
-- `checkout.completed` - Creates customer record when checkout completes
-- `subscription.created` / `subscription.updated` - Syncs subscription status
-- `subscription.canceled` - Marks subscription as canceled
-- `customer.created` / `customer.updated` - Updates customer information
-
-### Testing
-
-For testing, you can use Polar's test mode. Set up test products and use test payment methods. The webhook handler will process test events the same way as production events.
-
-## Security Best Practices
-
-1. **Never commit `.env` files** - Use `.env.example` as a template
-2. **Use strong secrets** - Generate secure random strings for `BETTER_AUTH_SECRET`
-3. **Enable HTTPS** - Always use SSL/TLS in production
-4. **Regular updates** - Keep dependencies up to date
-5. **Monitor logs** - Set up log aggregation and monitoring
-6. **Database backups** - Implement regular backup strategy
-7. **MinIO security** - Use strong credentials and restrict access
-
-## License
-
-[Your License Here]
+- Never commit `.env`.
+- Use HTTPS in production; terminate TLS at your load balancer, platform, or an HTTPS-enabled nginx layer.
+- Use strong database, object-storage, OAuth, and Better Auth credentials.
+- Restrict network access to PostgreSQL and object storage.
+- Back up PostgreSQL and object-storage data regularly.
