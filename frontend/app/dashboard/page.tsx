@@ -93,6 +93,14 @@ export default function Dashboard() {
     return () => window.clearTimeout(timeoutId);
   }, [fetchVersions]);
 
+  // Warm the editor route in the background. The dashboard's primary
+  // destination is /editor — prefetching it on mount means the user's first
+  // click on any template card or saved-resume button feels instant
+  // (no chunk download on the critical path).
+  useEffect(() => {
+    router.prefetch("/editor");
+  }, [router]);
+
   // Check for subscription query parameter
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

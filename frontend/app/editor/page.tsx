@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useMemo, memo, useCallback } from 'react';
+import React, { Suspense, useMemo, memo, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { generatePDF } from '@/lib/generatePDF';
 import { Download, ArrowLeft } from 'lucide-react';
@@ -143,7 +143,29 @@ RealTimeIndicator.displayName = 'RealTimeIndicator';
 
 function EditorContent() {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
-  useResumeSync();
+  const { saveNow } = useResumeSync();
+
+  // Keyboard shortcuts:
+  //   Cmd/Ctrl+S → flush any debounced changes and save immediately
+  //   Cmd/Ctrl+D → trigger PDF download (overrides browser bookmark dialog)
+  // Both also work as Ctrl on non-mac, hence the (metaKey || ctrlKey) guard.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey)) return;
+      const key = e.key.toLowerCase();
+      if (key === "s") {
+        e.preventDefault();
+        void saveNow();
+        return;
+      }
+      if (key === "d") {
+        e.preventDefault();
+        void generatePDF();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [saveNow]);
 
   // Memoize background style to prevent re-renders
   const backgroundStyle = useMemo(() => ({

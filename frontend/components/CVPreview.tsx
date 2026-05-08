@@ -186,35 +186,68 @@ export const CVPreview: React.FC = React.memo(() => {
   const [pages, setPages] = useState<TemplateBlock[][]>([]);
   const measureRef = useRef<HTMLDivElement>(null);
 
-  const resolvedFontSizes = {
-    ...DEFAULT_FONT_SIZES,
-    ...designSettings.fontSizes,
-  };
-  const resolvedSpacing = { ...DEFAULT_SPACING, ...designSettings.spacing };
-  const fontFamily =
-    designSettings.fontFamily === "serif"
-      ? "Georgia, serif"
-      : designSettings.fontFamily === "mono"
-      ? "Courier New, monospace"
-      : designSettings.fontFamily === "times"
-      ? '"Times New Roman", Times, serif'
-      : "ui-sans-serif, system-ui, sans-serif";
+  // ---- Memoized derived values ----
+  // These flow into inline `style` attributes on .cv-page and .cv-block.
+  // Without memoization every keystroke creates new objects, which forces
+  // React to mark every styled child as "props changed" during reconciliation
+  // even when the values are identical.
+  const resolvedFontSizes = useMemo(
+    () => ({ ...DEFAULT_FONT_SIZES, ...designSettings.fontSizes }),
+    [designSettings.fontSizes],
+  );
+  const resolvedSpacing = useMemo(
+    () => ({ ...DEFAULT_SPACING, ...designSettings.spacing }),
+    [designSettings.spacing],
+  );
+  const fontFamily = useMemo(() => {
+    switch (designSettings.fontFamily) {
+      case "serif":
+        return "Georgia, serif";
+      case "mono":
+        return "Courier New, monospace";
+      case "times":
+        return '"Times New Roman", Times, serif';
+      case "sans":
+      default:
+        return "ui-sans-serif, system-ui, sans-serif";
+    }
+  }, [designSettings.fontFamily]);
 
-  const designVars = {
-    fontFamily,
-    lineHeight: resolvedSpacing.lineHeight,
-    textAlign: designSettings.textAlignment,
-    "--cv-header-size": `${resolvedFontSizes.header * designSettings.scale}rem`,
-    "--cv-section-size": `${
-      resolvedFontSizes.sectionTitle * designSettings.scale
-    }rem`,
-    "--cv-body-size": `${resolvedFontSizes.body * designSettings.scale}rem`,
-    "--cv-line-height": resolvedSpacing.lineHeight,
-    "--cv-text-align": designSettings.textAlignment,
-    "--cv-font-family": fontFamily,
-    "--cv-section-padding": `${resolvedSpacing.sectionPadding}rem`,
-    "--cv-item-gap": `${resolvedSpacing.itemGap}rem`,
-  } as React.CSSProperties;
+  const designVars = useMemo<React.CSSProperties>(
+    () =>
+      ({
+        fontFamily,
+        lineHeight: resolvedSpacing.lineHeight,
+        textAlign: designSettings.textAlignment,
+        "--cv-header-size": `${
+          resolvedFontSizes.header * designSettings.scale
+        }rem`,
+        "--cv-section-size": `${
+          resolvedFontSizes.sectionTitle * designSettings.scale
+        }rem`,
+        "--cv-body-size": `${resolvedFontSizes.body * designSettings.scale}rem`,
+        "--cv-line-height": resolvedSpacing.lineHeight,
+        "--cv-text-align": designSettings.textAlignment,
+        "--cv-font-family": fontFamily,
+        "--cv-section-padding": `${resolvedSpacing.sectionPadding}rem`,
+        "--cv-item-gap": `${resolvedSpacing.itemGap}rem`,
+      }) as React.CSSProperties,
+    [
+      fontFamily,
+      resolvedFontSizes,
+      resolvedSpacing,
+      designSettings.textAlignment,
+      designSettings.scale,
+    ],
+  );
+
+  // The `style={{ paddingBottom: ... }}` on every .cv-block uses this; pulling
+  // it out of inline lets React skip per-block reconciliation when spacing
+  // didn't change between keystrokes.
+  const blockPaddingStyle = useMemo<React.CSSProperties>(
+    () => ({ paddingBottom: `${resolvedSpacing.sectionPadding}rem` }),
+    [resolvedSpacing.sectionPadding],
+  );
 
   // Pick the right generator for the currently selected template.
   const generator = useMemo<TemplateGenerator>(() => {
@@ -335,7 +368,7 @@ export const CVPreview: React.FC = React.memo(() => {
         key={block.id}
         data-id={block.id}
         className="cv-block"
-        style={{ paddingBottom: resolvedSpacing.sectionPadding + "rem" }}
+        style={blockPaddingStyle}
       >
         {block.content}
       </div>
@@ -499,10 +532,7 @@ export const CVPreview: React.FC = React.memo(() => {
                       <div
                         key={block.id}
                         className="cv-block"
-                        style={{
-                          paddingBottom:
-                            resolvedSpacing.sectionPadding + "rem",
-                        }}
+                        style={blockPaddingStyle}
                       >
                         {block.content}
                       </div>

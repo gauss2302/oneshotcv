@@ -265,4 +265,15 @@ export function useResumeSync() {
       }
     };
   }, [cancelPendingSave]);
+
+  // Imperative "save right now" — used by Cmd/Ctrl+S keyboard shortcut.
+  // Cancels any pending debounced save, then awaits the actual write.
+  const saveNow = useCallback(async (): Promise<void> => {
+    const targetId = useCVStore.getState().resumeId;
+    if (!targetId) return;
+    cancelPendingSave();
+    await performSave(targetId);
+  }, [cancelPendingSave, performSave]);
+
+  return { saveNow };
 }
