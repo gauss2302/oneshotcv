@@ -1,6 +1,55 @@
 import React from "react";
 import { useCVStore } from "@/store/useCVStore";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+/**
+ * Sortable wrapper for one education card. The grip handle sits in the
+ * top-left corner so the card body keeps its existing layout. Same shape as
+ * the SortableItem in ExperienceForm — kept inline (3 callers in the
+ * codebase, mild duplication is preferable to an over-eager abstraction).
+ */
+const SortableItem: React.FC<{ id: string; children: React.ReactNode }> = ({
+  id,
+  children,
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition } =
+    useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute top-4 left-4 cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 p-1 z-10"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={20} />
+      </div>
+      <div className="pl-8">{children}</div>
+    </div>
+  );
+};
 
 export const EducationForm: React.FC = () => {
   const {
@@ -8,8 +57,27 @@ export const EducationForm: React.FC = () => {
     addEducation,
     removeEducation,
     updateEducation,
+    reorderEducation,
     dataVersion,
   } = useCVStore();
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = education.findIndex((item) => item.id === active.id);
+      const newIndex = education.findIndex((item) => item.id === over.id);
+      if (oldIndex >= 0 && newIndex >= 0) {
+        reorderEducation(oldIndex, newIndex);
+      }
+    }
+  };
 
   return (
     <div
@@ -27,102 +95,120 @@ export const EducationForm: React.FC = () => {
         </button>
       </div>
 
-      <div className="space-y-6">
-        {education.map((edu) => (
-          <div
-            key={edu.id}
-            className="p-4 border border-gray-200 rounded-lg relative group"
-          >
-            <button
-              onClick={() => removeEducation(edu.id)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-              title="Remove"
-            >
-              <Trash2 size={18} />
-            </button>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={education.map((edu) => edu.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-6">
+            {education.map((edu) => (
+              <SortableItem key={edu.id} id={edu.id}>
+                <div className="p-4 border border-gray-200 rounded-lg relative">
+                  <button
+                    onClick={() => removeEducation(edu.id)}
+                    className="absolute top-4 right-4 text-gray-400 hover:text-red-500 transition-colors"
+                    title="Remove"
+                  >
+                    <Trash2 size={18} />
+                  </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Institution
-                </label>
-                <input
-                  value={edu.institution}
-                  onChange={(e) =>
-                    updateEducation(edu.id, { institution: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="University Name"
-                />
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Institution
+                      </label>
+                      <input
+                        value={edu.institution}
+                        onChange={(e) =>
+                          updateEducation(edu.id, {
+                            institution: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="University Name"
+                      />
+                    </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Degree
-                </label>
-                <input
-                  value={edu.degree}
-                  onChange={(e) =>
-                    updateEducation(edu.id, { degree: e.target.value })
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Bachelor's in Computer Science"
-                />
-              </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Degree
+                      </label>
+                      <input
+                        value={edu.degree}
+                        onChange={(e) =>
+                          updateEducation(edu.id, { degree: e.target.value })
+                        }
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        placeholder="Bachelor's in Computer Science"
+                      />
+                    </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Start Date
-                  </label>
-                  <input
-                    value={edu.startDate}
-                    onChange={(e) =>
-                      updateEducation(edu.id, { startDate: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="MM/YYYY"
-                  />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Start Date
+                        </label>
+                        <input
+                          value={edu.startDate}
+                          onChange={(e) =>
+                            updateEducation(edu.id, {
+                              startDate: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          placeholder="MM/YYYY"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          End Date
+                        </label>
+                        <input
+                          value={edu.endDate}
+                          onChange={(e) =>
+                            updateEducation(edu.id, {
+                              endDate: e.target.value,
+                            })
+                          }
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          placeholder="MM/YYYY"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={edu.description}
+                        onChange={(e) =>
+                          updateEducation(edu.id, {
+                            description: e.target.value,
+                          })
+                        }
+                        rows={3}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                        placeholder="Details about your studies..."
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    End Date
-                  </label>
-                  <input
-                    value={edu.endDate}
-                    onChange={(e) =>
-                      updateEducation(edu.id, { endDate: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="MM/YYYY"
-                  />
-                </div>
-              </div>
+              </SortableItem>
+            ))}
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  value={edu.description}
-                  onChange={(e) =>
-                    updateEducation(edu.id, { description: e.target.value })
-                  }
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
-                  placeholder="Details about your studies..."
-                />
+            {education.length === 0 && (
+              <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                No education added yet.
               </div>
-            </div>
+            )}
           </div>
-        ))}
-
-        {education.length === 0 && (
-          <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-            No education added yet.
-          </div>
-        )}
-      </div>
+        </SortableContext>
+      </DndContext>
     </div>
   );
 };

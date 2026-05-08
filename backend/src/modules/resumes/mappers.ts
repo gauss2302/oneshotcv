@@ -79,15 +79,17 @@ export function mapResumeRecordToDocument(resume: ResumeRecord): ResumeDocument 
             : undefined,
       },
       education:
-        resume.education?.map((item) => ({
-          id: item.id,
-          institution: item.institution,
-          degree: item.degree ?? "",
-          startDate: item.startDate ?? "",
-          endDate: item.endDate ?? "",
-          description: item.description ?? "",
-          current: false,
-        })) ?? [],
+        [...(resume.education ?? [])]
+          .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0))
+          .map((item) => ({
+            id: item.id,
+            institution: item.institution,
+            degree: item.degree ?? "",
+            startDate: item.startDate ?? "",
+            endDate: item.endDate ?? "",
+            description: item.description ?? "",
+            current: false,
+          })),
       experience:
         [...(resume.experience ?? [])]
           .sort((left, right) => (left.sortOrder ?? 0) - (right.sortOrder ?? 0))

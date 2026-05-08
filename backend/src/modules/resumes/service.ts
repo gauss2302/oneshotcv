@@ -25,13 +25,14 @@ async function replaceResumeCollections(
   await tx.delete(education).where(eq(education.resumeId, resumeId));
   if (payload.content.education.length > 0) {
     await tx.insert(education).values(
-      payload.content.education.map((item) => ({
+      payload.content.education.map((item, index) => ({
         resumeId,
         institution: item.institution,
         degree: item.degree || null,
         startDate: item.startDate || null,
         endDate: item.endDate || null,
         description: item.description || null,
+        sortOrder: index,
       }))
     );
   }

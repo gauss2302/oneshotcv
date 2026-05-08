@@ -126,6 +126,7 @@ export const education = pgTable("education", {
   startDate: text("start_date"),
   endDate: text("end_date"),
   description: text("description"),
+  sortOrder: integer("sort_order"),
 });
 
 // ==================== EXPERIENCE ====================

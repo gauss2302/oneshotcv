@@ -32,6 +32,7 @@ interface CVStore extends CVState {
   addEducation: () => void;
   updateEducation: (id: string, data: Partial<Education>) => void;
   removeEducation: (id: string) => void;
+  reorderEducation: (oldIndex: number, newIndex: number) => void;
   addExperience: () => void;
   updateExperience: (id: string, data: Partial<Experience>) => void;
   removeExperience: (id: string) => void;
@@ -39,6 +40,7 @@ interface CVStore extends CVState {
   addSkill: () => void;
   updateSkill: (id: string, data: Partial<Skill>) => void;
   removeSkill: (id: string) => void;
+  reorderSkill: (oldIndex: number, newIndex: number) => void;
   setTemplate: (template: string) => void;
   updateDesign: (settings: Partial<CVDesignSettings>) => void;
   setResume: (content: Partial<CVState> & { summary?: string }) => void;
@@ -100,6 +102,12 @@ export const useCVStore = create<CVStore>((set) => ({
   removeEducation: (id) =>
     set((state) => ({
       education: state.education.filter((edu) => edu.id !== id),
+      hasUnsavedChanges: true,
+    })),
+
+  reorderEducation: (oldIndex, newIndex) =>
+    set((state) => ({
+      education: arrayMove(state.education, oldIndex, newIndex),
       hasUnsavedChanges: true,
     })),
 
@@ -166,6 +174,12 @@ export const useCVStore = create<CVStore>((set) => ({
   removeSkill: (id) =>
     set((state) => ({
       skills: state.skills.filter((skill) => skill.id !== id),
+      hasUnsavedChanges: true,
+    })),
+
+  reorderSkill: (oldIndex, newIndex) =>
+    set((state) => ({
+      skills: arrayMove(state.skills, oldIndex, newIndex),
       hasUnsavedChanges: true,
     })),
 
