@@ -1,16 +1,20 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS base
 
 FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
+COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm ci
 
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+COPY frontend/ ./
+# frontend/contracts is a symlink to ../backend/src/contracts on the host.
+# Replace it with a real copy so Next's bundler treats it as a normal in-project module.
+RUN rm -rf /app/contracts
+COPY backend/src/contracts /app/contracts
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_BACKEND_URL

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 
+import { ApiError } from "@/lib/api-error";
 import { getSessionFromRequest } from "@/modules/auth/session";
 import {
   backendRateLimitConfigs,
@@ -7,6 +8,7 @@ import {
   getBackendClientIdentifier,
 } from "@/plugins/rate-limit";
 
+import { NoFileProvidedError } from "./errors";
 import {
   attachPhotoRequestSchema,
   detachPhotoRequestSchema,
@@ -14,29 +16,6 @@ import {
   recropPhotoRequestSchema,
 } from "./schemas";
 import { photoService } from "./service";
-
-function getErrorStatus(error: Error): number {
-  switch (error.message) {
-    case "This template does not support profile photos":
-      return 400;
-    case "Photo not found or access denied":
-    case "Resume photo not found or access denied":
-    case "Resume not found or access denied":
-      return 404;
-    case "No file provided":
-    case "Invalid file type. Only JPEG, PNG, and WebP are allowed.":
-    case "File too large. Maximum size is 10MB.":
-    case "File type mismatch. The file content does not match the declared type.":
-    case "Image too small. Minimum dimensions are 200x200 pixels.":
-      return 400;
-    default:
-      if (error.message.startsWith("Maximum ")) {
-        return 400;
-      }
-
-      return 500;
-  }
-}
 
 export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
   app.post("/api/photos/upload", async (request, reply) => {
@@ -63,7 +42,8 @@ export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
 
     const file = await request.file();
     if (!file) {
-      return reply.code(400).send({ error: "No file provided" });
+      const noFile = new NoFileProvidedError();
+      return reply.code(noFile.status).send({ error: noFile.message });
     }
 
     try {
@@ -78,10 +58,8 @@ export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
         photo: uploadedPhoto,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        return reply.code(getErrorStatus(error)).send({
-          error: error.message,
-        });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;
@@ -126,11 +104,8 @@ export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
         resumePhoto,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        const status = getErrorStatus(error);
-        return reply.code(status).send({
-          error: error.message,
-        });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;
@@ -162,10 +137,8 @@ export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
         ...croppedPhoto,
       });
     } catch (error) {
-      if (error instanceof Error) {
-        return reply.code(getErrorStatus(error)).send({
-          error: error.message,
-        });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;
@@ -200,10 +173,8 @@ export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
         message: "Photo detached successfully",
       });
     } catch (error) {
-      if (error instanceof Error) {
-        return reply.code(getErrorStatus(error)).send({
-          error: error.message,
-        });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;
@@ -247,10 +218,8 @@ export const registerPhotoRoutes: FastifyPluginAsync = async (app) => {
         message: "Photo deleted successfully",
       });
     } catch (error) {
-      if (error instanceof Error) {
-        return reply.code(getErrorStatus(error)).send({
-          error: error.message,
-        });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;

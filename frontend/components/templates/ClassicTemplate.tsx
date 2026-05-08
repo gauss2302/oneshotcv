@@ -42,6 +42,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
   // 1. Header Block
   blocks.push({
     id: "header",
+    kind: "atomic",
     content: (
       <div className="mb-6 text-center" style={containerStyle}>
         <h1
@@ -79,6 +80,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
   if (personalInfo.summary) {
     blocks.push({
       id: "summary",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <SectionTitle>Professional Summary</SectionTitle>
@@ -94,6 +96,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
   if (experience.length > 0) {
     blocks.push({
       id: "experience-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <SectionTitle>Work Experience</SectionTitle>
@@ -104,6 +107,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between items-baseline mb-1">
@@ -133,6 +137,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
   if (education.length > 0) {
     blocks.push({
       id: "education-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <SectionTitle>Education</SectionTitle>
@@ -143,6 +148,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between items-baseline mb-1">
@@ -165,6 +171,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
   if (skills.length > 0) {
     blocks.push({
       id: "skills",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <SectionTitle>Skills</SectionTitle>
@@ -186,6 +193,7 @@ export const getClassicTemplateBlocks: TemplateGenerator = (
   // Footer
   blocks.push({
     id: "footer",
+    kind: "footer",
     content: (
       <div
         style={{

@@ -6,6 +6,11 @@ import {
   isBackendPolarConfigured,
 } from "@/infrastructure/payments/polar";
 
+import {
+  PaymentSystemNotConfiguredError,
+  PaymentSystemUnavailableError,
+  SubscriptionProductMissingError,
+} from "./errors";
 import { subscriptionRepository } from "./repository";
 
 export const subscriptionService = {
@@ -33,17 +38,17 @@ export const subscriptionService = {
     name?: string | null;
   }) {
     if (!isBackendPolarConfigured()) {
-      throw new Error("Payment system is not configured");
+      throw new PaymentSystemNotConfiguredError();
     }
 
     const polar = getBackendPolarClient();
     if (!polar) {
-      throw new Error("Payment system is not available");
+      throw new PaymentSystemUnavailableError();
     }
 
     const env = getBackendEnv();
     if (!env.POLAR_PRODUCT_PRICE_ID) {
-      throw new Error("Subscription product is not configured");
+      throw new SubscriptionProductMissingError();
     }
 
     const successBaseUrl = env.NEXT_PUBLIC_APP_URL ?? env.FRONTEND_ORIGIN;

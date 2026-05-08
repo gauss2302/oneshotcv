@@ -1,43 +1,38 @@
-import { webcrypto } from "node:crypto";
-
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 import { db } from "@/infrastructure/db/client";
-import { getAuthBaseUrl, getTrustedOrigins } from "@/config/env";
+import { getAuthBaseUrl, getBackendEnv, getTrustedOrigins } from "@/config/env";
 
-const isProduction = process.env.NODE_ENV === "production";
+const env = getBackendEnv();
+const isProduction = env.NODE_ENV === "production";
 const authBaseUrl = getAuthBaseUrl();
 
-if (!globalThis.crypto) {
-  globalThis.crypto = webcrypto as Crypto;
-}
-
 const socialProviders = {
-  ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+  ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
     ? {
         google: {
           enabled: true,
-          clientId: process.env.GOOGLE_CLIENT_ID,
-          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          clientId: env.GOOGLE_CLIENT_ID,
+          clientSecret: env.GOOGLE_CLIENT_SECRET,
           redirectURI: `${authBaseUrl}/api/auth/callback/google`,
         },
       }
     : {}),
-  ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+  ...(env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
     ? {
         github: {
-          clientId: process.env.GITHUB_CLIENT_ID,
-          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          clientId: env.GITHUB_CLIENT_ID,
+          clientSecret: env.GITHUB_CLIENT_SECRET,
         },
       }
     : {}),
-  ...(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET
+  ...(env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET
     ? {
         linkedin: {
           enabled: true,
-          clientId: process.env.LINKEDIN_CLIENT_ID,
-          clientSecret: process.env.LINKEDIN_CLIENT_SECRET,
+          clientId: env.LINKEDIN_CLIENT_ID,
+          clientSecret: env.LINKEDIN_CLIENT_SECRET,
           redirectURI: `${authBaseUrl}/api/auth/callback/linkedin`,
         },
       }

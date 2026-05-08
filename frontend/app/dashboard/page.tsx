@@ -19,8 +19,19 @@ import type { ResumeSummary } from "@contracts/resume";
 type ResumeVersion = ResumeSummary;
 
 const templateOptions = [
+  // ATS-friendly (best parser compatibility)
+  { id: "ats-pure", label: "ATS Pure (parser-safe)" },
+  { id: "ats-chronological", label: "ATS Chronological" },
+  // Industry-focused
+  { id: "engineer", label: "Engineer" },
+  { id: "timeline", label: "Timeline (Consultant)" },
+  { id: "photo-first", label: "Photo First" },
+  // Existing classics
   { id: "classic", label: "Classic" },
   { id: "modern", label: "Modern" },
+  { id: "modern-minimalist", label: "Modern Minimalist" },
+  { id: "elegant", label: "Elegant" },
+  { id: "executive", label: "Executive" },
   { id: "creative", label: "Creative" },
   { id: "minimalist", label: "Minimalist" },
   { id: "professional", label: "Professional" },
@@ -898,6 +909,210 @@ export default function Dashboard() {
                             Space-Efficient
                           </span>
                         </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template 15: ATS Pure */}
+                <div
+                  onClick={() => startCreateFlow("ats-pure", "ATS Pure Resume")}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
+                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
+                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-700 overflow-hidden">
+                        <div className="border-b border-black pb-1 mb-2">
+                          <div className="w-32 h-2 bg-black mb-1"></div>
+                          <div className="w-20 h-1 bg-gray-700"></div>
+                        </div>
+                        <div className="space-y-1 mb-2">
+                          <div className="w-16 h-1 bg-black"></div>
+                          <div className="w-full h-0.5 bg-gray-400"></div>
+                          <div className="w-full h-0.5 bg-gray-400"></div>
+                          <div className="w-3/4 h-0.5 bg-gray-400"></div>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="w-16 h-1 bg-black"></div>
+                          <div className="w-full h-0.5 bg-gray-400"></div>
+                          <div className="w-5/6 h-0.5 bg-gray-400"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm mb-1">
+                        ATS Pure
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
+                          ATS Friendly
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template 16: ATS Chronological */}
+                <div
+                  onClick={() =>
+                    startCreateFlow("ats-chronological", "ATS Chronological Resume")
+                  }
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
+                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
+                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
+                        <div className="mb-2">
+                          <div className="w-24 h-2 bg-gray-900 mb-1"></div>
+                          <div className="w-20 h-1 bg-[#457b9d]"></div>
+                        </div>
+                        <div className="border-b-2 border-[#457b9d] mb-1.5 pb-0.5">
+                          <div className="w-12 h-1 bg-[#457b9d]"></div>
+                        </div>
+                        <div className="flex gap-2 mb-1">
+                          <div className="w-1/4 space-y-0.5">
+                            <div className="w-full h-0.5 bg-gray-400"></div>
+                          </div>
+                          <div className="flex-1 border-l border-gray-200 pl-1 space-y-0.5">
+                            <div className="w-3/4 h-0.5 bg-gray-700"></div>
+                            <div className="w-full h-0.5 bg-gray-300"></div>
+                            <div className="w-5/6 h-0.5 bg-gray-300"></div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="w-1/4 space-y-0.5">
+                            <div className="w-full h-0.5 bg-gray-400"></div>
+                          </div>
+                          <div className="flex-1 border-l border-gray-200 pl-1 space-y-0.5">
+                            <div className="w-3/4 h-0.5 bg-gray-700"></div>
+                            <div className="w-full h-0.5 bg-gray-300"></div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm mb-1">
+                        ATS Chronological
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
+                          ATS Friendly
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template 17: Engineer */}
+                <div
+                  onClick={() => startCreateFlow("engineer", "Engineer Resume")}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
+                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
+                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-700 overflow-hidden">
+                        <div className="border-b-2 border-[#0ea5e9] pb-1 mb-2 flex justify-between items-end">
+                          <div>
+                            <div className="w-20 h-2 bg-gray-900 mb-1"></div>
+                            <div className="w-14 h-1 bg-[#0ea5e9]"></div>
+                          </div>
+                          <div className="w-3 h-3 rounded bg-[#0ea5e9]"></div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-0.5 mb-2">
+                          {Array.from({ length: 9 }).map((_, i) => (
+                            <div
+                              key={i}
+                              className="h-1.5 bg-[#0ea5e9]/15 border border-[#0ea5e9] rounded-sm"
+                            ></div>
+                          ))}
+                        </div>
+                        <div className="border-l-2 border-[#0ea5e9] pl-1 space-y-0.5">
+                          <div className="w-full h-0.5 bg-gray-400"></div>
+                          <div className="w-3/4 h-0.5 bg-gray-300"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm mb-1">
+                        Engineer
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded-full font-medium">
+                          Tech Stack First
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template 18: Timeline */}
+                <div
+                  onClick={() => startCreateFlow("timeline", "Timeline Resume")}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
+                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
+                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
+                        <div className="mb-2">
+                          <div className="w-28 h-2 bg-gray-900 mb-1"></div>
+                          <div className="w-16 h-1 bg-[#10b981]"></div>
+                        </div>
+                        <div className="space-y-1.5 pl-2 border-l-2 border-[#10b981]/30">
+                          {[0, 1, 2].map((i) => (
+                            <div key={i} className="relative">
+                              <div className="absolute -left-[7px] top-0.5 w-1.5 h-1.5 rounded-full bg-[#10b981] border border-white"></div>
+                              <div className="w-12 h-0.5 bg-[#10b981] mb-0.5"></div>
+                              <div className="w-full h-0.5 bg-gray-700 mb-0.5"></div>
+                              <div className="w-3/4 h-0.5 bg-gray-300"></div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm mb-1">
+                        Timeline
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
+                          Consultant Style
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Template 19: Photo First */}
+                <div
+                  onClick={() => startCreateFlow("photo-first", "Photo First Resume")}
+                  className="group cursor-pointer"
+                >
+                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
+                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
+                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden flex flex-col items-center">
+                        <div className="w-10 h-10 rounded-full bg-[#f43f5e]/15 border-2 border-[#f43f5e] mb-1"></div>
+                        <div className="w-20 h-2 bg-gray-900 mb-0.5"></div>
+                        <div className="w-12 h-1 bg-[#f43f5e] mb-2"></div>
+                        <div className="space-y-0.5 w-full text-center">
+                          <div className="w-3/4 h-0.5 bg-gray-300 mx-auto"></div>
+                          <div className="w-full h-0.5 bg-gray-300"></div>
+                          <div className="w-5/6 h-0.5 bg-gray-300 mx-auto"></div>
+                        </div>
+                        <div className="mt-2 flex flex-wrap justify-center gap-0.5">
+                          <div className="w-5 h-1.5 rounded-full border border-[#f43f5e]"></div>
+                          <div className="w-5 h-1.5 rounded-full border border-[#f43f5e]"></div>
+                          <div className="w-5 h-1.5 rounded-full border border-[#f43f5e]"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-gray-900 text-sm mb-1">
+                        Photo First
+                      </h3>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full font-medium">
+                          Personal Brand
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 
 import { getBackendEnv } from "@/config/env";
+import { ApiError } from "@/lib/api-error";
 import { getSessionFromRequest } from "@/modules/auth/session";
 
 import {
@@ -42,20 +43,8 @@ export const registerSubscriptionRoutes: FastifyPluginAsync = async (app) => {
 
       return reply.send(checkoutSession);
     } catch (error) {
-      if (!(error instanceof Error)) {
-        throw error;
-      }
-
-      const message = error.message;
-      if (
-        message === "Payment system is not configured"
-        || message === "Payment system is not available"
-      ) {
-        return reply.code(503).send({ error: message });
-      }
-
-      if (message === "Subscription product is not configured") {
-        return reply.code(500).send({ error: message });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;

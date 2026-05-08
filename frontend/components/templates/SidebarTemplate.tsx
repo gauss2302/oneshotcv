@@ -1,121 +1,141 @@
-import React from 'react';
-import { CVState, CVDesignSettings } from '@/types/cv';
-import { TemplateBlock, TemplateGenerator } from './types';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import React from "react";
+import { CVState, CVDesignSettings } from "@/types/cv";
+import { TemplateBlock, TemplateGenerator, TemplateOutput } from "./types";
+import { Mail, Phone, MapPin } from "lucide-react";
 
-export const getSidebarTemplateBlocks: TemplateGenerator = (data: CVState, settings: CVDesignSettings) => {
+/**
+ * Sidebar template
+ *
+ * Layout: dark colored sidebar on the left (30% width) with photo, contacts
+ * and skills; main content (summary, experience, education) on the right.
+ *
+ * The sidebar is rendered by `CVPreview` on every page automatically via the
+ * `layout.sidebar` descriptor, so multi-page CVs no longer lose the sidebar
+ * on page 2+.
+ */
+
+const SIDEBAR_WIDTH = "30%";
+// Slight extra space between sidebar and main content
+const MAIN_LEFT_OFFSET = "34%";
+
+export const getSidebarTemplateBlocks: TemplateGenerator = (
+  data: CVState,
+  settings: CVDesignSettings,
+): TemplateOutput => {
   const { personalInfo, education, experience, skills } = data;
   const { themeColor, fontFamily, scale } = settings;
-  const blocks: TemplateBlock[] = [];
 
-  // Base styles
-  const baseStyle = {
-    fontFamily: fontFamily === 'serif' ? 'Georgia, serif' : fontFamily === 'mono' ? 'Courier New, monospace' : 'ui-sans-serif, system-ui, sans-serif',
+  const baseStyle: React.CSSProperties = {
+    fontFamily:
+      fontFamily === "serif"
+        ? "Georgia, serif"
+        : fontFamily === "mono"
+        ? "Courier New, monospace"
+        : "ui-sans-serif, system-ui, sans-serif",
     fontSize: `${0.9 * scale}rem`,
     lineHeight: 1.6,
-    color: '#334155', // slate-700
+    color: "#334155",
   };
 
-  const sidebarWidth = '30%';
-  const mainContentMargin = '34%'; // 30% + gap
+  // Style applied to every main-column block to clear the sidebar.
+  const mainColumnStyle: React.CSSProperties = {
+    marginLeft: MAIN_LEFT_OFFSET,
+    ...baseStyle,
+  };
 
-  // 1. Sidebar Container (Absolute Positioned Overlay)
-  // This block has 0 height in the flow but renders the sidebar for the first page
-  blocks.push({
-    id: 'sidebar-container',
-    content: (
-      <div style={{ height: 0, overflow: 'visible', position: 'relative' }}>
-        <div 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: sidebarWidth,
-            minHeight: '290mm', // Full A4 height approx
-            backgroundColor: themeColor,
-            padding: '2rem',
-            boxSizing: 'border-box',
-            ...baseStyle,
-            color: 'white'
-          }}
-        >
-          {/* Profile Photo */}
-          {personalInfo.photo && (
-            <div className="mb-6 flex justify-center">
-              <img
-                src={personalInfo.photo.url}
-                alt={personalInfo.fullName}
-                className="w-40 h-40 rounded-full object-cover border-4 border-white/20"
-                style={{ aspectRatio: '1/1' }}
-              />
-            </div>
-          )}
-
-          {/* Name & Title */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2 leading-tight" style={{ color: 'white' }}>
-              {personalInfo.fullName}
-            </h1>
-            <p className="text-lg opacity-90 font-medium" style={{ color: 'rgba(255,255,255,0.9)' }}>
-              {personalInfo.title}
-            </p>
-          </div>
-
-          {/* Contact Info */}
-          <div className="mb-8 space-y-3 text-sm">
-            {personalInfo.email && (
-              <div className="flex items-center gap-2">
-                <Mail size={14} className="shrink-0 opacity-80" />
-                <span className="break-all">{personalInfo.email}</span>
-              </div>
-            )}
-            {personalInfo.phone && (
-              <div className="flex items-center gap-2">
-                <Phone size={14} className="shrink-0 opacity-80" />
-                <span>{personalInfo.phone}</span>
-              </div>
-            )}
-            {personalInfo.address && (
-              <div className="flex items-center gap-2">
-                <MapPin size={14} className="shrink-0 opacity-80" />
-                <span>{personalInfo.address}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Skills in Sidebar */}
-          {skills.length > 0 && (
-            <div className="mb-8">
-              <h3 className="text-lg font-bold mb-4 border-b border-white/30 pb-1 uppercase tracking-wider">
-                Skills
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {skills.map(skill => (
-                  <span 
-                    key={skill.id}
-                    className="px-2 py-1 bg-white/20 rounded text-sm backdrop-blur-sm"
-                  >
-                    {skill.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+  // === Sidebar content (rendered on every page by CVPreview) ===
+  const sidebarContent = (
+    <div
+      style={{
+        ...baseStyle,
+        color: "white",
+        padding: "2rem",
+        height: "100%",
+        boxSizing: "border-box",
+      }}
+    >
+      {personalInfo.photo && (
+        <div className="mb-6 flex justify-center">
+          <img
+            src={personalInfo.photo.url}
+            alt={personalInfo.fullName}
+            className="w-40 h-40 rounded-full object-cover border-4 border-white/20"
+            style={{ aspectRatio: "1 / 1" }}
+          />
         </div>
-      </div>
-    ),
-  });
+      )}
 
-  // 2. Main Content Area (Summary)
+      <div className="mb-8">
+        <h1
+          className="text-3xl font-bold mb-2 leading-tight"
+          style={{ color: "white" }}
+        >
+          {personalInfo.fullName}
+        </h1>
+        <p
+          className="text-lg font-medium"
+          style={{ color: "rgba(255,255,255,0.9)" }}
+        >
+          {personalInfo.title}
+        </p>
+      </div>
+
+      <div className="mb-8 space-y-3 text-sm">
+        {personalInfo.email && (
+          <div className="flex items-center gap-2">
+            <Mail size={14} className="shrink-0 opacity-80" />
+            <span className="break-all">{personalInfo.email}</span>
+          </div>
+        )}
+        {personalInfo.phone && (
+          <div className="flex items-center gap-2">
+            <Phone size={14} className="shrink-0 opacity-80" />
+            <span>{personalInfo.phone}</span>
+          </div>
+        )}
+        {personalInfo.address && (
+          <div className="flex items-center gap-2">
+            <MapPin size={14} className="shrink-0 opacity-80" />
+            <span>{personalInfo.address}</span>
+          </div>
+        )}
+      </div>
+
+      {skills.length > 0 && (
+        <div className="mb-8">
+          <h3 className="text-lg font-bold mb-4 border-b border-white/30 pb-1 uppercase tracking-wider">
+            Skills
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            {skills.map((skill) => (
+              <span
+                key={skill.id}
+                className="px-2 py-1 bg-white/20 rounded text-sm"
+              >
+                {skill.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const blocks: TemplateBlock[] = [];
+
   if (personalInfo.summary) {
     blocks.push({
-      id: 'summary',
+      id: "summary",
+      kind: "section-item",
       content: (
-        <div style={{ marginLeft: mainContentMargin, ...baseStyle }} className="mb-6">
-          <h3 className="text-xl font-bold mb-3 text-gray-800 border-b-2 pb-1" style={{ borderColor: themeColor }}>
+        <div style={mainColumnStyle} className="mb-6">
+          <h3
+            className="text-xl font-bold mb-3 text-gray-800 border-b-2 pb-1"
+            style={{ borderColor: themeColor }}
+          >
             Profile
           </h3>
-          <p className="text-gray-600 leading-relaxed">
+          <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
             {personalInfo.summary}
           </p>
         </div>
@@ -123,32 +143,47 @@ export const getSidebarTemplateBlocks: TemplateGenerator = (data: CVState, setti
     });
   }
 
-  // 3. Experience
   if (experience.length > 0) {
     blocks.push({
-      id: 'experience-title',
+      id: "experience-title",
+      kind: "section-title",
       content: (
-        <div style={{ marginLeft: mainContentMargin, ...baseStyle }} className="mb-4">
-          <h3 className="text-xl font-bold text-gray-800 border-b-2 pb-1" style={{ borderColor: themeColor }}>
+        <div style={mainColumnStyle} className="mb-4">
+          <h3
+            className="text-xl font-bold text-gray-800 border-b-2 pb-1"
+            style={{ borderColor: themeColor }}
+          >
             Experience
           </h3>
         </div>
       ),
     });
 
-    experience.forEach(exp => {
+    experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: "section-item",
         content: (
-          <div style={{ marginLeft: mainContentMargin, ...baseStyle }} className="mb-6">
+          <div style={mainColumnStyle} className="mb-6">
             <div className="flex justify-between items-baseline mb-1">
-              <h4 className="font-bold text-lg text-gray-900">{exp.position}</h4>
+              <h4 className="font-bold text-lg text-gray-900">
+                {exp.position}
+              </h4>
               <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                {exp.startDate} - {exp.current ? 'Present' : exp.endDate}
+                {exp.startDate} - {exp.current ? "Present" : exp.endDate}
               </span>
             </div>
-            <div className="text-md font-semibold mb-2" style={{ color: themeColor }}>
+            <div
+              className="text-md font-semibold mb-2"
+              style={{ color: themeColor }}
+            >
               {exp.company}
+              {exp.location && (
+                <span className="text-gray-500 font-normal text-sm">
+                  {" "}
+                  · {exp.location}
+                </span>
+              )}
             </div>
             <p className="text-gray-600 text-sm whitespace-pre-line">
               {exp.description}
@@ -159,35 +194,45 @@ export const getSidebarTemplateBlocks: TemplateGenerator = (data: CVState, setti
     });
   }
 
-  // 4. Education
   if (education.length > 0) {
     blocks.push({
-      id: 'education-title',
+      id: "education-title",
+      kind: "section-title",
       content: (
-        <div style={{ marginLeft: mainContentMargin, ...baseStyle }} className="mb-4">
-          <h3 className="text-xl font-bold text-gray-800 border-b-2 pb-1" style={{ borderColor: themeColor }}>
+        <div style={mainColumnStyle} className="mb-4">
+          <h3
+            className="text-xl font-bold text-gray-800 border-b-2 pb-1"
+            style={{ borderColor: themeColor }}
+          >
             Education
           </h3>
         </div>
       ),
     });
 
-    education.forEach(edu => {
+    education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: "section-item",
         content: (
-          <div style={{ marginLeft: mainContentMargin, ...baseStyle }} className="mb-6">
+          <div style={mainColumnStyle} className="mb-6">
             <div className="flex justify-between items-baseline mb-1">
-              <h4 className="font-bold text-lg text-gray-900">{edu.institution}</h4>
+              <h4 className="font-bold text-lg text-gray-900">
+                {edu.institution}
+              </h4>
               <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                {edu.startDate} - {edu.endDate || 'Present'}
+                {edu.startDate} -{" "}
+                {edu.current ? "Present" : edu.endDate || "Present"}
               </span>
             </div>
-            <div className="text-md font-semibold" style={{ color: themeColor }}>
+            <div
+              className="text-md font-semibold"
+              style={{ color: themeColor }}
+            >
               {edu.degree}
             </div>
             {edu.description && (
-              <p className="text-gray-600 text-sm mt-1">
+              <p className="text-gray-600 text-sm mt-1 whitespace-pre-line">
                 {edu.description}
               </p>
             )}
@@ -197,5 +242,38 @@ export const getSidebarTemplateBlocks: TemplateGenerator = (data: CVState, setti
     });
   }
 
-  return blocks;
+  blocks.push({
+    id: "footer",
+    kind: "footer",
+    content: (
+      <div
+        style={{
+          ...mainColumnStyle,
+          marginTop: "2rem",
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "#9ca3af",
+        }}
+      >
+        Built by{" "}
+        <span style={{ fontWeight: "bold", color: themeColor }}>
+          oneshotcv.art
+        </span>{" "}
+        with love
+      </div>
+    ),
+  });
+
+  return {
+    blocks,
+    layout: {
+      kind: "sidebar-left",
+      sidebar: {
+        width: SIDEBAR_WIDTH,
+        background: themeColor,
+        color: "white",
+        content: sidebarContent,
+      },
+    },
+  };
 };

@@ -318,10 +318,3 @@ export const polarSubscriptionsRelations = relations(polarSubscriptions, ({ one 
     references: [polarCustomers.polarCustomerId],
   }),
 }));
-
-export const userRelationsWithPolar = relations(user, ({ many }) => ({
-  resumes: many(resumes),
-  photos: many(photos),
-  polarCustomer: many(polarCustomers),
-  polarSubscriptions: many(polarSubscriptions),
-}));

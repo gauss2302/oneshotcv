@@ -30,6 +30,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
   // 1. Header Block
   blocks.push({
     id: 'header',
+    kind: 'atomic',
     content: (
       <div className="mb-8 border-4 p-6 text-center" style={{ ...containerStyle, borderColor: themeColor }}>
         {personalInfo.photo && (
@@ -60,6 +61,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
   if (personalInfo.summary) {
     blocks.push({
       id: 'summary',
+      kind: 'section-item',
       content: (
         <div className="mb-8" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Executive Profile</h3>
@@ -75,6 +77,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
   if (experience.length > 0) {
     blocks.push({
       id: 'experience-title',
+      kind: 'section-title',
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Professional Experience</h3>
@@ -85,6 +88,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-6" style={containerStyle}>
             <div className="flex justify-between items-baseline mb-1">
@@ -107,6 +111,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
   if (education.length > 0) {
     blocks.push({
       id: 'education-title',
+      kind: 'section-title',
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Education</h3>
@@ -117,6 +122,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between items-baseline">
@@ -137,6 +143,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
   if (skills.length > 0) {
     blocks.push({
       id: 'skills',
+      kind: 'section-item',
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Core Competencies</h3>
@@ -156,6 +163,7 @@ export const getExecutiveTemplateBlocks: TemplateGenerator = (data: CVState, set
   // Footer
   blocks.push({
     id: 'footer',
+    kind: 'footer',
     content: (
       <div style={{ ...containerStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
         Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love

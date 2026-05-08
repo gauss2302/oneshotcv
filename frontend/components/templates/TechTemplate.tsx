@@ -26,6 +26,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
   // Header with tech aesthetic
   blocks.push({
     id: "header",
+    kind: "atomic",
     content: (
       <div className="mb-8" style={containerStyle}>
         <div className="flex items-start gap-6">
@@ -80,6 +81,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
   if (personalInfo.summary) {
     blocks.push({
       id: "summary",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <div className="flex items-center gap-2 mb-3">
@@ -101,6 +103,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
   if (experience.length > 0) {
     blocks.push({
       id: "experience-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <div className="flex items-center gap-2">
@@ -117,6 +120,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: "section-item",
         content: (
           <div
             className="mb-5 pl-3 border-l-2 border-gray-200"
@@ -154,6 +158,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
   if (education.length > 0) {
     blocks.push({
       id: "education-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <div className="flex items-center gap-2">
@@ -170,6 +175,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: "section-item",
         content: (
           <div
             className="mb-4 pl-3 border-l-2 border-gray-200"
@@ -195,6 +201,7 @@ export const getTechTemplateBlocks: TemplateGenerator = (
   if (skills.length > 0) {
     blocks.push({
       id: "skills",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <div className="flex items-center gap-2 mb-3">
@@ -223,6 +230,29 @@ export const getTechTemplateBlocks: TemplateGenerator = (
       ),
     });
   }
+
+  // Footer
+  blocks.push({
+    id: "footer",
+    kind: "footer",
+    content: (
+      <div
+        style={{
+          ...containerStyle,
+          marginTop: "2rem",
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "#9ca3af",
+        }}
+      >
+        Built by{" "}
+        <span style={{ fontWeight: "bold", color: themeColor }}>
+          oneshotcv.art
+        </span>{" "}
+        with love
+      </div>
+    ),
+  });
 
   return blocks;
 };

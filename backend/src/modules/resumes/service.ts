@@ -9,6 +9,7 @@ import {
   skills,
 } from "@/infrastructure/db/schema";
 
+import { ResumeNotFoundError } from "./errors";
 import {
   mapResumeRecordToDocument,
   mapResumeRowToSummary,
@@ -86,7 +87,7 @@ export const resumeService = {
     if (payload.id) {
       const existingResume = await resumeRepository.findResumeForUser(userId, payload.id);
       if (!existingResume) {
-        throw new Error("Resume not found");
+        throw new ResumeNotFoundError();
       }
 
       await db.transaction(async (tx) => {

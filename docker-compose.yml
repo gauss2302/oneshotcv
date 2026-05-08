@@ -34,8 +34,8 @@ services:
 
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ./
+      dockerfile: ./frontend/Dockerfile
       args:
         NEXT_PUBLIC_BACKEND_URL: ${PUBLIC_APP_URL:-http://localhost}
         NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
@@ -45,6 +45,8 @@ services:
       - .env
     environment:
       NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: "3000"
       NEXT_PUBLIC_APP_URL: ${PUBLIC_APP_URL:-http://localhost}
       NEXT_PUBLIC_BACKEND_URL: ${PUBLIC_APP_URL:-http://localhost}
     expose:

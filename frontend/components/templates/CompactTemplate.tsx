@@ -26,6 +26,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
   // Compact header
   blocks.push({
     id: "header",
+    kind: "atomic",
     content: (
       <div className="mb-5" style={containerStyle}>
         <div
@@ -78,6 +79,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
   if (personalInfo.summary) {
     blocks.push({
       id: "summary",
+      kind: "section-item",
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3
@@ -98,6 +100,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
   if (experience.length > 0) {
     blocks.push({
       id: "experience-title",
+      kind: "section-title",
       content: (
         <div className="mb-3" style={containerStyle}>
           <h3
@@ -113,6 +116,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-3" style={containerStyle}>
             <div className="flex justify-between items-start mb-0.5">
@@ -145,6 +149,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
   if (education.length > 0) {
     blocks.push({
       id: "education-title",
+      kind: "section-title",
       content: (
         <div className="mb-3" style={containerStyle}>
           <h3
@@ -160,6 +165,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-2" style={containerStyle}>
             <div className="flex justify-between items-baseline">
@@ -188,6 +194,7 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
   if (skills.length > 0) {
     blocks.push({
       id: "skills",
+      kind: "section-item",
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3
@@ -210,6 +217,29 @@ export const getCompactTemplateBlocks: TemplateGenerator = (
       ),
     });
   }
+
+  // Footer
+  blocks.push({
+    id: "footer",
+    kind: "footer",
+    content: (
+      <div
+        style={{
+          ...containerStyle,
+          marginTop: "1rem",
+          textAlign: "center",
+          fontSize: "0.7rem",
+          color: "#9ca3af",
+        }}
+      >
+        Built by{" "}
+        <span style={{ fontWeight: "bold", color: themeColor }}>
+          oneshotcv.art
+        </span>{" "}
+        with love
+      </div>
+    ),
+  });
 
   return blocks;
 };

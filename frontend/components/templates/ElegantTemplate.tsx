@@ -38,6 +38,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
   // 1. Header Block
   blocks.push({
     id: 'header',
+    kind: 'atomic',
     content: (
       <div className="mb-10 text-center" style={containerStyle}>
         <h1 className="text-4xl font-light mb-3 tracking-wider text-gray-900">
@@ -58,6 +59,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
   if (personalInfo.summary) {
     blocks.push({
       id: 'summary',
+      kind: 'section-item',
       content: (
         <div className="mb-10 max-w-xl mx-auto text-center" style={containerStyle}>
           <div className="mb-4">{divider}</div>
@@ -73,6 +75,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
   if (experience.length > 0) {
     blocks.push({
       id: 'experience-title',
+      kind: 'section-title',
       content: (
         <div className="mb-6 mt-8" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Experience</h3>
@@ -83,6 +86,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-8 text-center" style={containerStyle}>
             <h4 className="font-bold text-lg text-gray-800 mb-1">{exp.position}</h4>
@@ -102,6 +106,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
   if (education.length > 0) {
     blocks.push({
       id: 'education-title',
+      kind: 'section-title',
       content: (
         <div className="mb-6 mt-8" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Education</h3>
@@ -112,6 +117,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-6 text-center" style={containerStyle}>
             <h4 className="font-bold text-gray-800">{edu.institution}</h4>
@@ -130,6 +136,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
   if (skills.length > 0) {
     blocks.push({
       id: 'skills',
+      kind: 'section-item',
       content: (
         <div className="mb-8 mt-8 text-center" style={containerStyle}>
           <h3 style={sectionTitleStyle}>Expertise</h3>
@@ -148,6 +155,7 @@ export const getElegantTemplateBlocks: TemplateGenerator = (data: CVState, setti
   // Footer
   blocks.push({
     id: 'footer',
+    kind: 'footer',
     content: (
       <div style={{ ...containerStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
         Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love

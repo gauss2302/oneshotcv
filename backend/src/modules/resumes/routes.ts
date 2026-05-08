@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 
+import { ApiError } from "@/lib/api-error";
 import { getSessionFromRequest } from "@/modules/auth/session";
 
 import {
@@ -71,8 +72,8 @@ export const registerResumeRoutes: FastifyPluginAsync = async (app) => {
         id: resumeId,
       });
     } catch (error) {
-      if (error instanceof Error && error.message === "Resume not found") {
-        return reply.code(404).send({ error: error.message });
+      if (error instanceof ApiError) {
+        return reply.code(error.status).send({ error: error.message });
       }
 
       throw error;

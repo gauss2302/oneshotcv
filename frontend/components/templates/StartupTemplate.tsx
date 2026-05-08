@@ -26,6 +26,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
   // Vibrant header
   blocks.push({
     id: "header",
+    kind: "atomic",
     content: (
       <div className="mb-8" style={containerStyle}>
         <div
@@ -84,6 +85,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
   if (personalInfo.summary) {
     blocks.push({
       id: "summary",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3
@@ -108,6 +110,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
   if (experience.length > 0) {
     blocks.push({
       id: "experience-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3
@@ -127,6 +130,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: "section-item",
         content: (
           <div
             className="mb-5 p-4 rounded-lg border-l-4"
@@ -167,6 +171,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
   if (education.length > 0) {
     blocks.push({
       id: "education-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3
@@ -186,6 +191,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between items-baseline mb-1">
@@ -208,6 +214,7 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
   if (skills.length > 0) {
     blocks.push({
       id: "skills",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3
@@ -238,6 +245,29 @@ export const getStartupTemplateBlocks: TemplateGenerator = (
       ),
     });
   }
+
+  // Footer
+  blocks.push({
+    id: "footer",
+    kind: "footer",
+    content: (
+      <div
+        style={{
+          ...containerStyle,
+          marginTop: "2rem",
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "#9ca3af",
+        }}
+      >
+        Built by{" "}
+        <span style={{ fontWeight: "bold", color: themeColor }}>
+          oneshotcv.art
+        </span>{" "}
+        with love
+      </div>
+    ),
+  });
 
   return blocks;
 };

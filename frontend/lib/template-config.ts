@@ -10,6 +10,9 @@ export const TEMPLATES_WITH_PHOTO_SUPPORT = [
   "corporate",
   "startup",
   "compact",
+  // Phase 2 additions
+  "photo-first",
+  "engineer",
 ];
 
 export interface PhotoFrameConfig {
@@ -63,6 +66,16 @@ const TEMPLATE_PHOTO_CONFIG: Record<string, PhotoFrameConfig> = {
     width: 80,
     height: 80,
     aspectRatio: 1, // 1:1 square
+  },
+  "photo-first": {
+    width: 220,
+    height: 220,
+    aspectRatio: 1, // 1:1 large hero photo
+  },
+  engineer: {
+    width: 96,
+    height: 96,
+    aspectRatio: 1, // 1:1 small avatar
   },
 };
 

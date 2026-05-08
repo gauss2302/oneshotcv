@@ -30,9 +30,15 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
     textAlign: textAlignment
   };
 
-  // Helper to create a block
-  const addBlock = (id: string, content: React.ReactNode) => {
-    blocks.push({ id, content });
+  // Helper to create a block. Optional `kind` improves pagination
+  // (keep section titles attached to their first item, prevent footer
+  // landing in the middle of the document, etc.).
+  const addBlock = (
+    id: string,
+    content: React.ReactNode,
+    kind?: TemplateBlock['kind'],
+  ) => {
+    blocks.push({ id, content, kind });
   };
 
   // Header (Bold, colored background)
@@ -66,16 +72,16 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
         )}
       </div>
     </div>
-  ));
+  ), 'atomic');
 
   // Summary
   if (personalInfo.summary) {
     addBlock('summary', (
       <div style={{ ...baseStyle, textAlign: 'center', maxWidth: '42rem', margin: `0 auto ${spacing.sectionPadding}rem auto` }}>
         <div style={{ width: '4rem', height: '0.25rem', margin: '0 auto 1rem auto', borderRadius: '9999px', backgroundColor: themeColor }}></div>
-        <p style={{ fontSize: `${1.125 * scale}rem`, color: '#374151', lineHeight: 1.7 }}>{personalInfo.summary}</p>
+        <p style={{ fontSize: `${1.125 * scale}rem`, color: '#374151', lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>{personalInfo.summary}</p>
       </div>
-    ));
+    ), 'section-item');
   }
 
   // Skills Pills (Centered)
@@ -105,7 +111,7 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
           ))}
         </div>
       </div>
-    ));
+    ), 'section-item');
   }
 
   // Experience
@@ -114,7 +120,7 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
       <h2 style={{ ...baseStyle, fontSize: `${fontSizes.sectionTitle * scale}rem`, fontWeight: '900', textAlign: 'center', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: themeColor }}>
         Experience
       </h2>
-    ));
+    ), 'section-title');
 
     experience.forEach((exp) => {
       addBlock(`exp-${exp.id}`, (
@@ -122,15 +128,17 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem', flexDirection: textAlignment === 'right' ? 'row-reverse' : 'row' }}>
             <div>
               <h3 style={{ fontSize: `${1.25 * scale}rem`, fontWeight: 'bold', color: '#111827' }}>{exp.position}</h3>
-              <p style={{ fontWeight: '600', color: themeColor }}>{exp.company}</p>
+              <p style={{ fontWeight: '600', color: themeColor }}>
+                {exp.company}{exp.location ? ` · ${exp.location}` : ''}
+              </p>
             </div>
             <span style={{ fontSize: `${0.875 * scale}rem`, color: '#6b7280', backgroundColor: 'white', padding: '0.25rem 0.75rem', borderRadius: '9999px' }}>
-              {exp.startDate} - {exp.endDate || 'Present'}
+              {exp.startDate} - {exp.current ? 'Present' : exp.endDate || 'Present'}
             </span>
           </div>
-          <p style={{ color: '#374151', fontSize: `${fontSizes.body * scale}rem` }}>{exp.description}</p>
+          <p style={{ color: '#374151', fontSize: `${fontSizes.body * scale}rem`, whiteSpace: 'pre-wrap' }}>{exp.description}</p>
         </div>
-      ));
+      ), 'section-item');
     });
   }
 
@@ -140,7 +148,7 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
       <h2 style={{ ...baseStyle, fontSize: `${fontSizes.sectionTitle * scale}rem`, fontWeight: '900', textAlign: 'center', marginBottom: '1.5rem', marginTop: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: themeColor }}>
         Education
       </h2>
-    ));
+    ), 'section-title');
 
     // Grid layout for education if possible, but blocks are linear. We'll stack them nicely.
     education.forEach((edu) => {
@@ -151,9 +159,14 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
             <h3 style={{ fontSize: `${1.125 * scale}rem`, fontWeight: 'bold', color: '#111827' }}>{edu.degree}</h3>
           </div>
           <p style={{ color: '#4b5563', fontSize: `${fontSizes.body * scale}rem` }}>{edu.institution}</p>
-          <p style={{ fontSize: `${0.875 * scale}rem`, color: '#6b7280' }}>{edu.endDate}</p>
+          <p style={{ fontSize: `${0.875 * scale}rem`, color: '#6b7280' }}>
+            {edu.startDate} - {edu.current ? 'Present' : edu.endDate || 'Present'}
+          </p>
+          {edu.description && (
+            <p style={{ color: '#6b7280', fontSize: `${0.875 * scale}rem`, marginTop: '0.5rem', whiteSpace: 'pre-wrap' }}>{edu.description}</p>
+          )}
         </div>
-      ));
+      ), 'section-item');
     });
   }
 
@@ -162,7 +175,7 @@ export const getBoldTemplateBlocks = (data: CVState, settings: CVDesignSettings)
     <div style={{ ...baseStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
       Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love
     </div>
-  ));
+  ), 'footer');
 
   return blocks;
 };

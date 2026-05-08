@@ -20,6 +20,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
   // Header Block (Full width background simulation)
   blocks.push({
     id: 'header',
+    kind: 'atomic',
     content: (
       <div className="-mx-8 -mt-8 mb-8 p-8 text-white text-center" style={{ backgroundColor: '#1f2937', fontFamily: containerStyle.fontFamily }}>
         {personalInfo.photo && (
@@ -65,6 +66,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
   if (personalInfo.summary) {
     blocks.push({
       id: 'summary',
+      kind: 'section-item',
       content: (
         <div className="mb-8 text-center max-w-lg mx-auto" style={containerStyle}>
            <div className="w-12 h-1 mx-auto mb-4" style={{ backgroundColor: themeColor }}></div>
@@ -80,6 +82,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
   if (experience.length > 0) {
     blocks.push({
       id: 'experience-title',
+      kind: 'section-title',
       content: (
         <div className="mb-6 text-center" style={containerStyle}>
           <h3 style={{ color: '#2c3e50', fontSize: '1.5rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1rem' }}>
@@ -93,6 +96,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-8 text-center max-w-2xl mx-auto" style={containerStyle}>
             <h4 className="font-bold text-xl mb-1" style={{ color: themeColor }}>{exp.position}</h4>
@@ -112,6 +116,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
   if (education.length > 0) {
     blocks.push({
       id: 'education-title',
+      kind: 'section-title',
       content: (
         <div className="mb-6 text-center" style={containerStyle}>
           <h3 style={{ color: '#2c3e50', fontSize: '1.5rem', fontWeight: 800, textTransform: 'uppercase', marginBottom: '1rem' }}>
@@ -125,6 +130,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-6 text-center" style={containerStyle}>
             <h4 className="font-bold text-lg" style={{ color: themeColor }}>{edu.institution}</h4>
@@ -143,6 +149,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
   if (skills.length > 0) {
     blocks.push({
       id: 'skills',
+      kind: 'section-item',
       content: (
         <section style={{ marginTop: '3rem', backgroundColor: '#ecf0f1', padding: '2rem', borderRadius: '1rem' }}>
           <h3 style={{ color: '#2c3e50', fontSize: '1.25rem', fontWeight: 800, textAlign: 'center', textTransform: 'uppercase', marginBottom: '1.5rem' }}>
@@ -174,6 +181,7 @@ export const getCreativeTemplateBlocks: TemplateGenerator = (data: CVState, sett
   // Footer
   blocks.push({
     id: 'footer',
+    kind: 'footer',
     content: (
       <div style={{ ...containerStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
         Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love

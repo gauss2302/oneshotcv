@@ -19,6 +19,17 @@ import { db } from "@/infrastructure/db/client";
 import { photos, resumePhotos } from "@/infrastructure/db/schema";
 
 import {
+  FileTooLargeError,
+  FileTypeMismatchError,
+  ImageTooSmallError,
+  InvalidFileTypeError,
+  MaxPhotosReachedError,
+  PhotoNotFoundError,
+  ResumeNotFoundForPhotoError,
+  ResumePhotoNotFoundError,
+  TemplateUnsupportedPhotoError,
+} from "./errors";
+import {
   getBackendMimeTypeFromMagic,
   sanitizeBackendFileName,
   validateBackendFileSize,
@@ -55,28 +66,28 @@ export const photoService = {
   }) {
     const [photoCount] = await photoRepository.countUserPhotos(userId);
     if (photoCount.count >= MAX_PHOTOS_PER_USER) {
-      throw new Error(`Maximum ${MAX_PHOTOS_PER_USER} photos allowed. Please delete an existing photo first.`);
+      throw new MaxPhotosReachedError(MAX_PHOTOS_PER_USER);
     }
 
     const declaredMimeType = normalizeMimeType(file.mimetype);
 
     if (!ALLOWED_TYPES.includes(file.mimetype)) {
-      throw new Error("Invalid file type. Only JPEG, PNG, and WebP are allowed.");
+      throw new InvalidFileTypeError();
     }
 
     const buffer = await file.toBuffer();
     if (!validateBackendFileSize(buffer.length, MAX_FILE_SIZE)) {
-      throw new Error("File too large. Maximum size is 10MB.");
+      throw new FileTooLargeError();
     }
 
     const actualMimeType = getBackendMimeTypeFromMagic(buffer);
     if (!actualMimeType || !validateBackendFileType(buffer, declaredMimeType)) {
-      throw new Error("File type mismatch. The file content does not match the declared type.");
+      throw new FileTypeMismatchError();
     }
 
     const { width, height, isValid } = await validateBackendImageDimensions(buffer);
     if (!isValid) {
-      throw new Error("Image too small. Minimum dimensions are 200x200 pixels.");
+      throw new ImageTooSmallError();
     }
 
     const sanitizedFileName = sanitizeBackendFileName(file.filename);
@@ -126,17 +137,17 @@ export const photoService = {
 
   async attachPhoto(userId: string, payload: AttachPhotoRequest) {
     if (!backendTemplateSupportsPhoto(payload.templateId)) {
-      throw new Error("This template does not support profile photos");
+      throw new TemplateUnsupportedPhotoError();
     }
 
     const photo = await photoRepository.findUserPhoto(userId, payload.photoId);
     if (!photo) {
-      throw new Error("Photo not found or access denied");
+      throw new PhotoNotFoundError();
     }
 
     const resumeRecord = await photoRepository.findUserResume(userId, payload.resumeId);
     if (!resumeRecord) {
-      throw new Error("Resume not found or access denied");
+      throw new ResumeNotFoundForPhotoError();
     }
 
     const existingResumePhoto = await photoRepository.findResumePhotoByResume(payload.resumeId);
@@ -185,7 +196,7 @@ export const photoService = {
     );
 
     if (!resumePhotoRecord) {
-      throw new Error("Resume photo not found or access denied");
+      throw new ResumePhotoNotFoundError();
     }
 
     await deleteFromBackendMinio(resumePhotoRecord.resumePhoto.processedPath).catch(() => undefined);
@@ -223,7 +234,7 @@ export const photoService = {
     const [resumePhotoRecord] = await photoRepository.findResumePhotoForUser(userId, payload);
 
     if (!resumePhotoRecord) {
-      throw new Error("Resume photo not found or access denied");
+      throw new ResumePhotoNotFoundError();
     }
 
     await deleteFromBackendMinio(resumePhotoRecord.resumePhoto.processedPath).catch(() => undefined);
@@ -233,7 +244,7 @@ export const photoService = {
   async deletePhoto(userId: string, photoId: string, force: boolean) {
     const photo = await photoRepository.findUserPhoto(userId, photoId);
     if (!photo) {
-      throw new Error("Photo not found or access denied");
+      throw new PhotoNotFoundError();
     }
 
     const usages = await photoRepository.listPhotoUsages(photoId);

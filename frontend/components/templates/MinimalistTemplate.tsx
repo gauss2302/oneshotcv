@@ -30,6 +30,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
   // 1. Header Block
   blocks.push({
     id: 'header',
+    kind: 'atomic',
     content: (
       <div className="mb-6" style={containerStyle}>
         <h1 className="text-2xl font-bold mb-1 text-center uppercase tracking-wide" style={{ color: themeColor }}>
@@ -48,6 +49,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
   if (personalInfo.summary) {
     blocks.push({
       id: 'summary',
+      kind: 'section-item',
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3 style={sectionHeaderStyle}>Professional Summary</h3>
@@ -63,6 +65,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
   if (experience.length > 0) {
     blocks.push({
       id: 'experience-title',
+      kind: 'section-title',
       content: (
         <div className="mb-2" style={containerStyle}>
           <h3 style={sectionHeaderStyle}>Work Experience</h3>
@@ -73,6 +76,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between font-bold">
@@ -93,6 +97,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
   if (education.length > 0) {
     blocks.push({
       id: 'education-title',
+      kind: 'section-title',
       content: (
         <div className="mb-2" style={containerStyle}>
           <h3 style={sectionHeaderStyle}>Education</h3>
@@ -103,6 +108,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between font-bold">
@@ -121,6 +127,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
   if (skills.length > 0) {
     blocks.push({
       id: 'skills',
+      kind: 'section-item',
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3 style={sectionHeaderStyle}>Skills</h3>
@@ -135,6 +142,7 @@ export const getMinimalistTemplateBlocks: TemplateGenerator = (data: CVState, se
   // Footer
   blocks.push({
     id: 'footer',
+    kind: 'footer',
     content: (
       <div style={{ ...containerStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
         Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love

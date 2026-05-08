@@ -28,6 +28,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
   // 1. Header Block (Left-aligned with accent bar)
   blocks.push({
     id: 'header',
+    kind: 'atomic',
     content: (
       <div className="mb-8 flex" style={containerStyle}>
         <div className="w-1.5 self-stretch mr-6 rounded-full" style={{ backgroundColor: themeColor }}></div>
@@ -82,6 +83,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
   if (personalInfo.summary) {
     blocks.push({
       id: 'summary',
+      kind: 'section-item',
       content: (
         <div className="mb-8 bg-gray-50 p-6 rounded-xl border-l-4" style={{ ...containerStyle, borderLeftColor: themeColor }}>
           <p className="text-gray-700 italic leading-relaxed">
@@ -96,6 +98,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
   if (experience.length > 0) {
     blocks.push({
       id: 'experience-title',
+      kind: 'section-title',
       content: (
         <div className="mb-6 flex items-center gap-3" style={containerStyle}>
           <div className="h-px flex-1 bg-gray-200"></div>
@@ -108,6 +111,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: 'section-item',
         content: (
           <div className="mb-6 relative pl-8 border-l-2 border-gray-100" style={containerStyle}>
             <div className="absolute -left-[9px] top-1.5 w-4 h-4 rounded-full border-2 bg-white" style={{ borderColor: themeColor }}></div>
@@ -133,6 +137,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
   if (education.length > 0) {
     blocks.push({
       id: 'edu-title',
+      kind: 'section-title',
       content: (
         <h3 style={{ color: colors.textMain, fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
           <span style={{ width: '20px', height: '4px', backgroundColor: themeColor, borderRadius: '2px' }}></span>
@@ -144,17 +149,18 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
     education.forEach(edu => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: 'section-item',
         content: (
           <div style={{ marginBottom: '1.5rem', paddingLeft: '1rem', borderLeft: '1px solid #e2e8f0' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '0.25rem' }}>
               <h4 style={{ color: colors.textMain, fontSize: '1.1rem', fontWeight: 700 }}>{edu.institution}</h4>
               <span style={{ color: colors.textSec, fontSize: '0.85rem', fontWeight: 500 }}>
-                {edu.startDate} - {edu.endDate || 'Present'}
+                {edu.startDate} - {edu.current ? 'Present' : edu.endDate || 'Present'}
               </span>
             </div>
             <div style={{ color: colors.textMain, fontWeight: 500 }}>{edu.degree}</div>
             {edu.description && (
-              <p style={{ color: colors.textSec, fontSize: '0.9rem', marginTop: '0.25rem' }}>{edu.description}</p>
+              <p style={{ color: colors.textSec, fontSize: '0.9rem', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{edu.description}</p>
             )}
           </div>
         )
@@ -166,6 +172,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
   if (skills.length > 0) {
     blocks.push({
       id: 'skills-title',
+      kind: 'section-title',
       content: (
         <div className="mb-6 flex items-center gap-3" style={containerStyle}>
           <div className="h-px flex-1 bg-gray-200"></div>
@@ -177,6 +184,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
 
     blocks.push({
       id: 'skills-content',
+      kind: 'section-item',
       content: (
         <div className="mb-8 grid grid-cols-2 gap-4" style={containerStyle}>
           {skills.map(skill => (
@@ -203,6 +211,7 @@ export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settin
   // Footer
   blocks.push({
     id: 'footer',
+    kind: 'footer',
     content: (
       <div style={{ ...containerStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
         Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love

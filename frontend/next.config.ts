@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
     const productionDomain = process.env.NEXT_PUBLIC_PRODUCTION_DOMAIN;
     const backendOrigin =
       process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:4000";
+    const minioPublicOrigin = process.env.NEXT_PUBLIC_MINIO_PUBLIC_URL;
 
     return [
       {
@@ -59,7 +60,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: https: blob:",
+              `img-src 'self' data: https: blob:${minioPublicOrigin ? ` ${minioPublicOrigin}` : ""}`,
               "font-src 'self' data:",
               "connect-src 'self'",
               backendOrigin,

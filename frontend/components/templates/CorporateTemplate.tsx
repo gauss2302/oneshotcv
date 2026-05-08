@@ -26,6 +26,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
   // Professional header with subtle styling
   blocks.push({
     id: "header",
+    kind: "atomic",
     content: (
       <div className="mb-8" style={containerStyle}>
         <div className="border-b-4 pb-4" style={{ borderColor: themeColor }}>
@@ -79,6 +80,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
   if (personalInfo.summary) {
     blocks.push({
       id: "summary",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3 className="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wider">
@@ -96,6 +98,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
   if (experience.length > 0) {
     blocks.push({
       id: "experience-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <div className="flex items-center gap-3">
@@ -115,6 +118,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
     experience.forEach((exp) => {
       blocks.push({
         id: `exp-${exp.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-5" style={containerStyle}>
             <div className="flex justify-between items-start mb-2">
@@ -151,6 +155,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
   if (education.length > 0) {
     blocks.push({
       id: "education-title",
+      kind: "section-title",
       content: (
         <div className="mb-4" style={containerStyle}>
           <h3 className="text-lg font-bold text-gray-900 uppercase tracking-wider">
@@ -167,6 +172,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
     education.forEach((edu) => {
       blocks.push({
         id: `edu-${edu.id}`,
+        kind: "section-item",
         content: (
           <div className="mb-4" style={containerStyle}>
             <div className="flex justify-between items-baseline mb-1">
@@ -189,6 +195,7 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
   if (skills.length > 0) {
     blocks.push({
       id: "skills",
+      kind: "section-item",
       content: (
         <div className="mb-6" style={containerStyle}>
           <h3 className="text-lg font-bold text-gray-900 uppercase tracking-wider mb-3">
@@ -208,6 +215,29 @@ export const getCorporateTemplateBlocks: TemplateGenerator = (
       ),
     });
   }
+
+  // Footer
+  blocks.push({
+    id: "footer",
+    kind: "footer",
+    content: (
+      <div
+        style={{
+          ...containerStyle,
+          marginTop: "2rem",
+          textAlign: "center",
+          fontSize: "0.75rem",
+          color: "#9ca3af",
+        }}
+      >
+        Built by{" "}
+        <span style={{ fontWeight: "bold", color: themeColor }}>
+          oneshotcv.art
+        </span>{" "}
+        with love
+      </div>
+    ),
+  });
 
   return blocks;
 };

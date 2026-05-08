@@ -31,9 +31,15 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
     textAlign: textAlignment
   };
 
-  // Helper to create a block
-  const addBlock = (id: string, content: React.ReactNode) => {
-    blocks.push({ id, content });
+  // Helper to create a block. Optional `kind` improves pagination
+  // (keep section titles attached to their first item, prevent footer
+  // landing in the middle of the document, etc.).
+  const addBlock = (
+    id: string,
+    content: React.ReactNode,
+    kind?: TemplateBlock['kind'],
+  ) => {
+    blocks.push({ id, content, kind });
   };
 
   // Header
@@ -74,7 +80,7 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
         )}
       </div>
     </div>
-  ));
+  ), 'atomic');
 
   // Summary
   if (personalInfo.summary) {
@@ -88,9 +94,9 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
           marginLeft: textAlignment === 'center' ? 'auto' : textAlignment === 'right' ? 'auto' : '0',
           marginRight: textAlignment === 'center' ? 'auto' : '0'
         }}></div>
-        <p style={{ fontSize: `${fontSizes.body * scale}rem`, color: '#374151' }}>{personalInfo.summary}</p>
+        <p style={{ fontSize: `${fontSizes.body * scale}rem`, color: '#374151', whiteSpace: 'pre-wrap' }}>{personalInfo.summary}</p>
       </div>
-    ));
+    ), 'section-item');
   }
 
   // Experience
@@ -99,7 +105,7 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
       <h2 style={{ ...baseStyle, fontSize: `${fontSizes.sectionTitle * scale}rem`, fontWeight: 'bold', color: themeColor, marginBottom: '1rem' }}>
         Experience
       </h2>
-    ));
+    ), 'section-title');
 
     experience.forEach((exp) => {
       addBlock(`exp-${exp.id}`, (
@@ -107,13 +113,15 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem', flexDirection: textAlignment === 'right' ? 'row-reverse' : 'row' }}>
             <h3 style={{ fontSize: `${1.125 * scale}rem`, fontWeight: '600' }}>{exp.position}</h3>
             <span style={{ fontSize: `${0.875 * scale}rem`, color: '#6b7280' }}>
-              {exp.startDate} - {exp.endDate || 'Present'}
+              {exp.startDate} - {exp.current ? 'Present' : exp.endDate || 'Present'}
             </span>
           </div>
-          <p style={{ color: '#4b5563', marginBottom: '0.5rem', fontSize: `${fontSizes.body * scale}rem` }}>{exp.company}</p>
-          <p style={{ color: '#374151', fontSize: `${0.875 * scale}rem` }}>{exp.description}</p>
+          <p style={{ color: '#4b5563', marginBottom: '0.5rem', fontSize: `${fontSizes.body * scale}rem` }}>
+            {exp.company}{exp.location ? ` · ${exp.location}` : ''}
+          </p>
+          <p style={{ color: '#374151', fontSize: `${0.875 * scale}rem`, whiteSpace: 'pre-wrap' }}>{exp.description}</p>
         </div>
-      ));
+      ), 'section-item');
     });
   }
 
@@ -123,18 +131,23 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
       <h2 style={{ ...baseStyle, fontSize: `${fontSizes.sectionTitle * scale}rem`, fontWeight: 'bold', color: themeColor, marginBottom: '1rem' }}>
         Education
       </h2>
-    ));
+    ), 'section-title');
 
     education.forEach((edu) => {
       addBlock(`edu-${edu.id}`, (
         <div style={{ ...baseStyle, marginBottom: `${spacing.itemGap}rem` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.25rem', flexDirection: textAlignment === 'right' ? 'row-reverse' : 'row' }}>
             <h3 style={{ fontSize: `${1.125 * scale}rem`, fontWeight: '600' }}>{edu.degree}</h3>
-            <span style={{ fontSize: `${0.875 * scale}rem`, color: '#6b7280' }}>{edu.endDate}</span>
+            <span style={{ fontSize: `${0.875 * scale}rem`, color: '#6b7280' }}>
+              {edu.startDate} - {edu.current ? 'Present' : edu.endDate || 'Present'}
+            </span>
           </div>
           <p style={{ color: '#4b5563', fontSize: `${fontSizes.body * scale}rem` }}>{edu.institution}</p>
+          {edu.description && (
+            <p style={{ color: '#6b7280', fontSize: `${0.875 * scale}rem`, marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{edu.description}</p>
+          )}
         </div>
-      ));
+      ), 'section-item');
     });
   }
 
@@ -167,7 +180,7 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
           ))}
         </div>
       </div>
-    ));
+    ), 'section-item');
   }
 
   // Footer
@@ -175,7 +188,7 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
     <div style={{ ...baseStyle, marginTop: '2rem', textAlign: 'center', fontSize: '0.75rem', color: '#9ca3af' }}>
       Built by <span style={{ fontWeight: 'bold', color: themeColor }}>oneshotcv.art</span> with love
     </div>
-  ));
+  ), 'footer');
 
   return blocks;
 };
