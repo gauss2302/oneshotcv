@@ -5,8 +5,11 @@ import { db } from "@/infrastructure/db/client";
 import { getAuthBaseUrl, getBackendEnv, getTrustedOrigins } from "@/config/env";
 
 const env = getBackendEnv();
-const isProduction = env.NODE_ENV === "production";
 const authBaseUrl = getAuthBaseUrl();
+// Browsers reject `Secure` cookies on plain HTTP and Better Auth prefixes
+// secure cookie names with `__Secure-`, which would also break the proxy
+// middleware's cookie lookup. Gate on the actual scheme of the auth origin.
+const useSecureCookies = authBaseUrl.startsWith("https://");
 
 const socialProviders = {
   ...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
@@ -50,19 +53,19 @@ export const backendAuth = betterAuth({
   socialProviders,
   trustedOrigins: getTrustedOrigins(),
   advanced: {
-    useSecureCookies: isProduction,
+    useSecureCookies,
     disableCSRFCheck: false,
     disableOriginCheck: false,
     defaultCookieAttributes: {
       httpOnly: true,
-      secure: isProduction,
+      secure: useSecureCookies,
       sameSite: "lax" as const,
     },
     cookies: {
       session_token: {
         attributes: {
           httpOnly: true,
-          secure: isProduction,
+          secure: useSecureCookies,
           sameSite: "lax" as const,
         },
       },

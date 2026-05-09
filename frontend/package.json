@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "sync-contracts": "node scripts/sync-contracts.mjs",
+    "predev": "npm run sync-contracts",
+    "prebuild": "npm run sync-contracts",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -24,6 +27,7 @@
     "framer-motion": "^12.34.3",
     "lucide-react": "^0.554.0",
     "next": "16.0.3",
+    "pako": "^1.0.11",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-easy-crop": "^5.5.5",
