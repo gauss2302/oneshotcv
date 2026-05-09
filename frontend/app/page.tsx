@@ -34,7 +34,7 @@ export default function LandingPage() {
 
           <div className="navActions">
             <Link href="/login" className="btn">Log in</Link>
-            <Link href="/dashboard" className="btn primary">Sign up</Link>
+            <Link href="/register" className="btn primary">Sign up</Link>
           </div>
           <MobileNav />
         </div>
@@ -299,7 +299,7 @@ export default function LandingPage() {
             <div className="col">
               <h4>Company</h4>
               <Link href="/login">Log in</Link>
-              <Link href="/dashboard">Sign up</Link>
+              <Link href="/register">Sign up</Link>
             </div>
           </div>
           <div className="footerBottom">

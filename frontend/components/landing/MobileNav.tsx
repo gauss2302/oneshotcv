@@ -85,7 +85,7 @@ export function MobileNav() {
               <Link href="/login" className="btn" onClick={close}>
                 Log in
               </Link>
-              <Link href="/dashboard" className="btn primary" onClick={close}>
+              <Link href="/register" className="btn primary" onClick={close}>
                 Sign up
               </Link>
             </div>
