@@ -27,6 +27,12 @@ interface CVStore extends CVState {
   // Data version to track changes (for form reset)
   dataVersion: number;
 
+  // Monotonic counter incremented on every user-driven mutation. The save
+  // hook snapshots it before sending and only marks the resume "saved" if
+  // it hasn't moved during the round-trip — otherwise typing that happened
+  // while a save was in flight would be silently cleared.
+  mutationCount: number;
+
   // Actions
   updatePersonal: (data: Partial<PersonalInfo>) => void;
   addEducation: () => void;
@@ -68,11 +74,13 @@ export const useCVStore = create<CVStore>((set) => ({
   lastSavedAt: null,
   hasUnsavedChanges: false,
   dataVersion: 0,
+  mutationCount: 0,
 
   updatePersonal: (data) =>
     set((state) => ({
       personalInfo: { ...state.personalInfo, ...data },
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   addEducation: () =>
@@ -89,6 +97,7 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       ],
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   updateEducation: (id, data) =>
@@ -97,18 +106,21 @@ export const useCVStore = create<CVStore>((set) => ({
         edu.id === id ? { ...edu, ...data } : edu
       ),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   removeEducation: (id) =>
     set((state) => ({
       education: state.education.filter((edu) => edu.id !== id),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   reorderEducation: (oldIndex, newIndex) =>
     set((state) => ({
       education: arrayMove(state.education, oldIndex, newIndex),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   addExperience: () =>
@@ -128,6 +140,7 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       ],
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   updateExperience: (id, data) =>
@@ -136,18 +149,21 @@ export const useCVStore = create<CVStore>((set) => ({
         exp.id === id ? { ...exp, ...data } : exp
       ),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   removeExperience: (id) =>
     set((state) => ({
       experience: state.experience.filter((exp) => exp.id !== id),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   reorderExperience: (oldIndex, newIndex) =>
     set((state) => ({
       experience: arrayMove(state.experience, oldIndex, newIndex),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   addSkill: () =>
@@ -161,6 +177,7 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       ],
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   updateSkill: (id, data) =>
@@ -169,24 +186,28 @@ export const useCVStore = create<CVStore>((set) => ({
         skill.id === id ? { ...skill, ...data } : skill
       ),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   removeSkill: (id) =>
     set((state) => ({
       skills: state.skills.filter((skill) => skill.id !== id),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   reorderSkill: (oldIndex, newIndex) =>
     set((state) => ({
       skills: arrayMove(state.skills, oldIndex, newIndex),
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   setTemplate: (template) =>
-    set(() => ({
+    set((state) => ({
       selectedTemplate: template,
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   updateDesign: (settings) =>
@@ -204,6 +225,7 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       },
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 
   setResume: (content) =>
@@ -276,7 +298,8 @@ export const useCVStore = create<CVStore>((set) => ({
     })),
 
   markUnsaved: () =>
-    set(() => ({
+    set((state) => ({
       hasUnsavedChanges: true,
+      mutationCount: state.mutationCount + 1,
     })),
 }));

@@ -163,6 +163,10 @@ export function useResumeSync() {
           photo: undefined,
         };
 
+        // Snapshot before the network round-trip so we can detect typing
+        // that lands while the request is in flight.
+        const versionAtSaveStart = state.mutationCount;
+
         await saveResume({
           id: targetResumeId,
           content: {
@@ -175,8 +179,15 @@ export function useResumeSync() {
           },
         });
 
-        // Only mark as saved if we're still on the same resume
-        if (useCVStore.getState().resumeId === targetResumeId) {
+        const after = useCVStore.getState();
+        // Only mark as saved if we're still on this resume AND no new
+        // typing landed during the round-trip. Otherwise leave
+        // hasUnsavedChanges true so the debounce effect's pending timeout
+        // (scheduled by that typing) will fire and persist the latest state.
+        if (
+          after.resumeId === targetResumeId
+          && after.mutationCount === versionAtSaveStart
+        ) {
           setSaved();
         }
       } catch (error) {
