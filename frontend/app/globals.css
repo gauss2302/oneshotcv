@@ -513,6 +513,9 @@ body {
   text-decoration: none;
   padding: 8px 10px;
   border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 .landing-page nav a:hover {
   background: rgba(15, 23, 42, 0.06);
