@@ -54,7 +54,7 @@ export const personalInfoSchema = z.object({
 
 export const educationItemSchema = z.object({
   id: resumeIdSchema.optional(),
-  institution: z.string().min(1).max(200),
+  institution: z.string().max(200),
   degree: z.string().max(200),
   startDate: z.string().max(50),
   endDate: z.string().max(50),
@@ -64,8 +64,8 @@ export const educationItemSchema = z.object({
 
 export const experienceItemSchema = z.object({
   id: resumeIdSchema.optional(),
-  company: z.string().min(1).max(200),
-  position: z.string().min(1).max(200),
+  company: z.string().max(200),
+  position: z.string().max(200),
   startDate: z.string().max(50),
   endDate: z.string().max(50),
   location: z.string().max(200),
@@ -76,7 +76,7 @@ export const experienceItemSchema = z.object({
 
 export const skillItemSchema = z.object({
   id: resumeIdSchema.optional(),
-  name: z.string().min(1).max(100),
+  name: z.string().max(100),
   level: z.number().int().min(1).max(5),
 });
 
