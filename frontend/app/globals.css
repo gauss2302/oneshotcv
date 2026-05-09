@@ -583,9 +583,12 @@ body {
 }
 .landing-page .hero h1 {
   margin: 12px 0 12px;
+  font-family: var(--font-family-display);
+  font-weight: 700;
   font-size: clamp(2.2rem, 4.3vw, 3.25rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
+  text-wrap: balance;
   color: var(--iru-ink);
 }
 .landing-page .hero p {
@@ -731,10 +734,13 @@ body {
 }
 .landing-page .darkInner h2 {
   margin: 0 0 12px;
+  font-family: var(--font-family-display);
+  font-weight: 700;
   color: var(--iru-darkText);
   font-size: clamp(1.8rem, 3vw, 2.4rem);
   letter-spacing: -0.02em;
   line-height: 1.1;
+  text-wrap: balance;
 }
 .landing-page .darkInner p {
   margin: 0 0 18px;
@@ -790,8 +796,11 @@ body {
 }
 .landing-page .sectionTitle h3 {
   margin: 0 0 10px;
+  font-family: var(--font-family-display);
+  font-weight: 700;
   font-size: clamp(1.7rem, 2.7vw, 2.2rem);
   letter-spacing: -0.02em;
+  text-wrap: balance;
   color: var(--iru-ink);
 }
 .landing-page .sectionTitle p {
@@ -1077,9 +1086,12 @@ body {
 }
 .landing-page .ctaInner h3 {
   margin: 0;
+  font-family: var(--font-family-display);
+  font-weight: 700;
   color: var(--iru-darkText);
   font-size: clamp(1.6rem, 2.6vw, 2.2rem);
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 .landing-page .ctaInner p {
   margin: 10px 0 0;
