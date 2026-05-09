@@ -114,7 +114,7 @@ export default function LandingPage() {
           <Reveal>
           <div className="container">
             <div className="sectionTitle">
-              <h3>One integrated platform.<br />Greater than the sum of its parts.</h3>
+              <h2>One integrated platform.<br />Greater than the sum of its parts.</h2>
               <p>
                 Start with a template, add your experience and skills, then export to PDF.
                 Everything shares the same live preview and design controls.
@@ -168,7 +168,7 @@ export default function LandingPage() {
             </div>
 
             <div className="sectionTitle" style={{ marginTop: '56px' }}>
-              <h3>Numbers don&apos;t lie</h3>
+              <h2>Numbers don&apos;t lie</h2>
               <p>One flow, zero formatting headaches—measured in time saved and callbacks.</p>
             </div>
             <div className="stats" aria-label="Stats">
@@ -185,7 +185,7 @@ export default function LandingPage() {
           <Reveal>
           <div className="container">
             <div className="sectionTitle">
-              <h3>{PRODUCT_NAME} helps people land the role they want</h3>
+              <h2>{PRODUCT_NAME} helps people land the role they want</h2>
               <p>See what others say about building their resume with One Shot CV.</p>
             </div>
             <div className="cards3" aria-label="Testimonials">
@@ -211,7 +211,7 @@ export default function LandingPage() {
           <Reveal>
           <div className="container">
             <div className="sectionTitle">
-              <h3>Simple, transparent pricing</h3>
+              <h2>Simple, transparent pricing</h2>
               <p>Start free. Upgrade when you need unlimited PDF downloads.</p>
             </div>
             <div className="pricingGrid">
@@ -257,7 +257,7 @@ export default function LandingPage() {
           <Reveal>
           <div className="container ctaInner">
             <div>
-              <h3>Let your resume do the talking</h3>
+              <h2>Let your resume do the talking</h2>
               <p>
                 Start with {PRODUCT_NAME} — choose a template, add your story, export your PDF.
               </p>
