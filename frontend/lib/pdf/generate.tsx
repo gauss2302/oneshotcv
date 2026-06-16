@@ -9,8 +9,9 @@
  */
 
 import React from "react";
-import { CVState } from "@/types/cv";
+import type { CVState } from "@/types/cv";
 import { logger } from "@/lib/logger";
+import { buildSpecInputFromCv } from "./specs/input";
 
 interface BuildOptions {
   /** CV state from useCVStore */
@@ -31,21 +32,7 @@ export async function buildPdfBlob({ cv, templateId }: BuildOptions): Promise<Bl
     import("./specs/builders"),
   ]);
 
-  const spec = buildSpecForTemplate(templateId, {
-    fullName: cv.personalInfo.fullName,
-    title: cv.personalInfo.title,
-    email: cv.personalInfo.email,
-    phone: cv.personalInfo.phone,
-    address: cv.personalInfo.address,
-    summary: cv.personalInfo.summary,
-    photo: cv.personalInfo.photo
-      ? { url: cv.personalInfo.photo.url }
-      : undefined,
-    experience: cv.experience,
-    education: cv.education,
-    skills: cv.skills,
-    designSettings: cv.designSettings,
-  });
+  const spec = buildSpecForTemplate(templateId, buildSpecInputFromCv(cv));
 
   const doc = pdf(<PdfDocument spec={spec} />);
   return doc.toBlob();

@@ -62,6 +62,16 @@ interface CVStore extends CVState {
 
 const generateId = () => Math.random().toString(36).substring(2, 9);
 
+function hasPersonalInfoChanges(
+  current: PersonalInfo,
+  patch: Partial<PersonalInfo>
+): boolean {
+  return Object.entries(patch).some(([key, value]) => {
+    const field = key as keyof PersonalInfo;
+    return current[field] !== value;
+  });
+}
+
 export const useCVStore = create<CVStore>((set) => ({
   // Initial state
   ...createEmptyCVState(),
@@ -77,11 +87,17 @@ export const useCVStore = create<CVStore>((set) => ({
   mutationCount: 0,
 
   updatePersonal: (data) =>
-    set((state) => ({
-      personalInfo: { ...state.personalInfo, ...data },
-      hasUnsavedChanges: true,
-      mutationCount: state.mutationCount + 1,
-    })),
+    set((state) => {
+      if (!hasPersonalInfoChanges(state.personalInfo, data)) {
+        return state;
+      }
+
+      return {
+        personalInfo: { ...state.personalInfo, ...data },
+        hasUnsavedChanges: true,
+        mutationCount: state.mutationCount + 1,
+      };
+    }),
 
   addEducation: () =>
     set((state) => ({
@@ -261,6 +277,7 @@ export const useCVStore = create<CVStore>((set) => ({
         // Increment version to trigger form resets
         dataVersion: state.dataVersion + 1,
         hasUnsavedChanges: false,
+        isSaving: false,
       };
     }),
 

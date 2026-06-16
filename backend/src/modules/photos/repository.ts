@@ -74,7 +74,7 @@ export const photoRepository = {
       .from(resumePhotos)
       .innerJoin(resumes, eq(resumePhotos.resumeId, resumes.id))
       .where(
-        and(eq(resumes.userId, userId), eq(resumePhotos.id, condition.photoId!))
+        and(eq(resumes.userId, userId), eq(resumePhotos.photoId, condition.photoId!))
       )
       .limit(1);
   },

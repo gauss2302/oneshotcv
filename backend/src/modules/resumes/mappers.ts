@@ -146,7 +146,10 @@ export function mapResumeRowToSummary(row: {
   };
 }
 
-export function mapSaveRequestToResumeValues(payload: SaveResumeRequest) {
+export function mapSaveRequestToResumeValues(
+  payload: SaveResumeRequest,
+  options: { existingTitle?: string | null } = {}
+) {
   const designSettings = {
     ...DEFAULT_DESIGN_SETTINGS,
     ...payload.content.designSettings,
@@ -161,7 +164,7 @@ export function mapSaveRequestToResumeValues(payload: SaveResumeRequest) {
   };
 
   return {
-    title: payload.title ?? DEFAULT_TITLE,
+    title: payload.title ?? options.existingTitle ?? DEFAULT_TITLE,
     fullName: payload.content.personalInfo.fullName,
     email: payload.content.personalInfo.email,
     phone: payload.content.personalInfo.phone || null,

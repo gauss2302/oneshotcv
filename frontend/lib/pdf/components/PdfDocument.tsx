@@ -9,6 +9,10 @@ interface Props {
   spec: TemplateSpec;
 }
 
+function sectionContainsSkills(section: TemplateSpec["sections"][number]): boolean {
+  return section.items.some((item) => item.type === "skills");
+}
+
 /**
  * Main PDF Document.
  *
@@ -49,6 +53,9 @@ export const PdfDocument: React.FC<Props> = ({ spec }) => {
   if ((layout === "sidebar-left" || layout === "sidebar-right") && sidebar) {
     const sidebarWidthPct = `${Math.round(sidebar.widthFraction * 100)}%`;
     const isLeft = layout === "sidebar-left";
+    const mainSections = sidebar.skillsInSidebar
+      ? sections.filter((section) => !sectionContainsSkills(section))
+      : sections;
 
     return (
       <Document
@@ -152,7 +159,7 @@ export const PdfDocument: React.FC<Props> = ({ spec }) => {
               )}
 
             {/* Main column sections */}
-            {sections.map((section) => (
+            {mainSections.map((section) => (
               <PdfSection key={section.id} section={section} theme={theme} />
             ))}
 

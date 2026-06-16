@@ -57,4 +57,46 @@ describe("mapSaveRequestToResumeValues", () => {
     expect(result.itemGap).toBe("1.25");
     expect(result.textAlignment).toBe("center");
   });
+
+  it("keeps the existing title when an update payload omits title", () => {
+    const payload: SaveResumeRequest = {
+      id: "3c1234bc-3133-47d4-9a53-0468bfb8bb2b",
+      content: {
+        personalInfo: {
+          fullName: "Jane Doe",
+          email: "jane@example.com",
+          phone: "",
+          address: "",
+          summary: "",
+          title: "",
+        },
+        education: [],
+        experience: [],
+        skills: [],
+        selectedTemplate: "classic",
+        designSettings: {
+          themeColor: "#112233",
+          fontFamily: "sans",
+          scale: 1,
+          textAlignment: "left",
+          fontSizes: {
+            header: 2.25,
+            sectionTitle: 1.5,
+            body: 1,
+          },
+          spacing: {
+            lineHeight: 1.6,
+            sectionPadding: 2,
+            itemGap: 1,
+          },
+        },
+      },
+    };
+
+    const result = mapSaveRequestToResumeValues(payload, {
+      existingTitle: "Frontend Engineer CV",
+    });
+
+    expect(result.title).toBe("Frontend Engineer CV");
+  });
 });

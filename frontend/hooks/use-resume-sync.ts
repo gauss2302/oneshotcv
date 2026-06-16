@@ -5,8 +5,20 @@ import { useSearchParams } from "next/navigation";
 import { fetchResume, saveResume } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
 import type { CVState } from "@/types/cv";
+import type { ResumeContent } from "@contracts/resume";
 
 const SAVE_DEBOUNCE_MS = 1500;
+
+function buildResumeContent(state: CVState): ResumeContent {
+  return {
+    personalInfo: state.personalInfo,
+    education: state.education,
+    experience: state.experience,
+    skills: state.skills,
+    selectedTemplate: state.selectedTemplate,
+    designSettings: state.designSettings,
+  };
+}
 
 export function useResumeSync() {
   const { data: session } = authClient.useSession();
@@ -91,14 +103,7 @@ export function useResumeSync() {
           // Create new resume
           const current = useCVStore.getState();
           const createData = await saveResume({
-            content: {
-              personalInfo: { ...current.personalInfo, photo: undefined },
-              education: current.education,
-              experience: current.experience,
-              skills: current.skills,
-              selectedTemplate: current.selectedTemplate,
-              designSettings: current.designSettings,
-            },
+            content: buildResumeContent(current),
             createNew: true,
           });
 
@@ -158,25 +163,13 @@ export function useResumeSync() {
       setIsSaving(true);
 
       try {
-        const personalInfoWithoutPhoto = {
-          ...state.personalInfo,
-          photo: undefined,
-        };
-
         // Snapshot before the network round-trip so we can detect typing
         // that lands while the request is in flight.
         const versionAtSaveStart = state.mutationCount;
 
         await saveResume({
           id: targetResumeId,
-          content: {
-            personalInfo: personalInfoWithoutPhoto,
-            education: state.education,
-            experience: state.experience,
-            skills: state.skills,
-            selectedTemplate: state.selectedTemplate,
-            designSettings: state.designSettings,
-          },
+          content: buildResumeContent(state),
         });
 
         const after = useCVStore.getState();
@@ -253,20 +246,9 @@ export function useResumeSync() {
         cancelPendingSave();
 
         // Fire and forget save
-        const personalInfoWithoutPhoto = {
-          ...state.personalInfo,
-          photo: undefined,
-        };
         saveResume({
           id: state.resumeId,
-          content: {
-            personalInfo: personalInfoWithoutPhoto,
-            education: state.education,
-            experience: state.experience,
-            skills: state.skills,
-            selectedTemplate: state.selectedTemplate,
-            designSettings: state.designSettings,
-          },
+          content: buildResumeContent(state),
         }).catch((error) => {
           logger.error(
             "Failed to save resume on cleanup",

@@ -83,13 +83,15 @@ export const resumeService = {
   },
 
   async saveResume(userId: string, payload: SaveResumeRequest): Promise<string> {
-    const resumeValues = mapSaveRequestToResumeValues(payload);
-
     if (payload.id) {
       const existingResume = await resumeRepository.findResumeForUser(userId, payload.id);
       if (!existingResume) {
         throw new ResumeNotFoundError();
       }
+
+      const resumeValues = mapSaveRequestToResumeValues(payload, {
+        existingTitle: existingResume.title,
+      });
 
       await db.transaction(async (tx) => {
         await tx
@@ -104,23 +106,30 @@ export const resumeService = {
     }
 
     if (payload.createNew) {
-      const [newResume] = await db
-        .insert(resumes)
-        .values({
-          ...resumeValues,
-          userId,
-        })
-        .returning({ id: resumes.id });
+      const resumeValues = mapSaveRequestToResumeValues(payload);
 
-      await db.transaction(async (tx) => {
+      const newResumeId = await db.transaction(async (tx) => {
+        const [newResume] = await tx
+          .insert(resumes)
+          .values({
+            ...resumeValues,
+            userId,
+          })
+          .returning({ id: resumes.id });
+
         await replaceResumeCollections(tx, newResume.id, payload);
+        return newResume.id;
       });
 
-      return newResume.id;
+      return newResumeId;
     }
 
     const existingResume = await resumeRepository.findFirstResumeForUser(userId);
     if (existingResume) {
+      const resumeValues = mapSaveRequestToResumeValues(payload, {
+        existingTitle: existingResume.title,
+      });
+
       await db.transaction(async (tx) => {
         await tx
           .update(resumes)
@@ -133,19 +142,22 @@ export const resumeService = {
       return existingResume.id;
     }
 
-    const [newResume] = await db
-      .insert(resumes)
-      .values({
-        ...resumeValues,
-        userId,
-      })
-      .returning({ id: resumes.id });
+    const resumeValues = mapSaveRequestToResumeValues(payload);
 
-    await db.transaction(async (tx) => {
+    const newResumeId = await db.transaction(async (tx) => {
+      const [newResume] = await tx
+        .insert(resumes)
+        .values({
+          ...resumeValues,
+          userId,
+        })
+        .returning({ id: resumes.id });
+
       await replaceResumeCollections(tx, newResume.id, payload);
+      return newResume.id;
     });
 
-    return newResume.id;
+    return newResumeId;
   },
 
   async deleteResume(userId: string, resumeId: string): Promise<void> {
