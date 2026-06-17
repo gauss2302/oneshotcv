@@ -14,9 +14,9 @@ export function Reveal({ children, className, delay = 0 }: Props) {
   return (
     <motion.div
       className={className}
-      initial={{ opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 24 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
+      initial={reduceMotion ? false : { y: 24 }}
+      whileInView={{ y: 0 }}
+      viewport={{ once: true, amount: 0.1 }}
       transition={{
         duration: reduceMotion ? 0 : 0.5,
         ease: "easeOut",
@@ -35,11 +35,10 @@ export function StaggerGroup({ children, className }: Omit<Props, "delay">) {
       className={className}
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.3 }}
+      viewport={{ once: true, amount: 0.1 }}
       variants={{
-        hidden: { opacity: reduceMotion ? 1 : 0 },
+        hidden: {},
         show: {
-          opacity: 1,
           transition: reduceMotion
             ? { delayChildren: 0, staggerChildren: 0 }
             : { delayChildren: 0.1, staggerChildren: 0.12 },
@@ -57,9 +56,8 @@ export function StaggerItem({ children, className, delay = 0 }: Props) {
     <motion.div
       className={className}
       variants={{
-        hidden: { opacity: reduceMotion ? 1 : 0, y: reduceMotion ? 0 : 20 },
+        hidden: reduceMotion ? {} : { y: 20 },
         show: {
-          opacity: 1,
           y: 0,
           transition: {
             duration: reduceMotion ? 0 : 0.45,
