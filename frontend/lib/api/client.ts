@@ -2,6 +2,18 @@ interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: BodyInit | null;
 }
 
+export class ApiFetchError extends Error {
+  readonly status: number;
+  readonly payload: unknown;
+
+  constructor(message: string, status: number, payload: unknown = null) {
+    super(message);
+    this.name = "ApiFetchError";
+    this.status = status;
+    this.payload = payload;
+  }
+}
+
 /**
  * Public HTTP API base URL (Fastify). The browser calls this host directly; Next.js does not proxy `/api`.
  */
@@ -40,15 +52,16 @@ export async function apiFetch<T>(
 
   if (!response.ok) {
     let errorMessage = `Request failed with status ${response.status}`;
+    let errorPayload: unknown = null;
 
     try {
-      const payload = await response.json();
-      errorMessage = extractErrorMessage(payload) ?? errorMessage;
+      errorPayload = await response.json();
+      errorMessage = extractErrorMessage(errorPayload) ?? errorMessage;
     } catch {
       // Ignore JSON parsing failures and fall back to the status-based message.
     }
 
-    throw new Error(errorMessage);
+    throw new ApiFetchError(errorMessage, response.status, errorPayload);
   }
 
   if (response.status === 204) {

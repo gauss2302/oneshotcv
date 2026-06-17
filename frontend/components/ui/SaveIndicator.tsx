@@ -1,9 +1,16 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { useCVStore } from "@/store/useCVStore";
-import { Cloud, CloudOff, Loader2, Check } from "lucide-react";
+import { AlertTriangle, Cloud, CloudOff, Loader2, Check } from "lucide-react";
 
 export const SaveIndicator: React.FC = memo(() => {
-  const { isSaving, hasUnsavedChanges, lastSavedAt, isLoading } = useCVStore();
+  const {
+    isSaving,
+    hasUnsavedChanges,
+    lastSavedAt,
+    isLoading,
+    saveError,
+    saveConflict,
+  } = useCVStore();
   const [now, setNow] = useState(() => Date.now());
 
   // Re-render once per second while we have a timestamp to display.
@@ -40,6 +47,24 @@ export const SaveIndicator: React.FC = memo(() => {
       <div className="flex items-center gap-2 text-blue-500 text-sm animate-in fade-in duration-200">
         <Loader2 size={16} className="animate-spin" />
         <span className="font-medium">Saving...</span>
+      </div>
+    );
+  }
+
+  if (saveConflict) {
+    return (
+      <div className="flex items-center gap-2 text-red-600 text-sm animate-in fade-in duration-200">
+        <AlertTriangle size={16} />
+        <span className="font-medium">Save conflict</span>
+      </div>
+    );
+  }
+
+  if (saveError) {
+    return (
+      <div className="flex items-center gap-2 text-red-600 text-sm animate-in fade-in duration-200">
+        <AlertTriangle size={16} />
+        <span className="font-medium">Save failed</span>
       </div>
     );
   }

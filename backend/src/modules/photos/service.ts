@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type {
   AttachPhotoRequest,
   DetachPhotoRequest,
@@ -16,12 +16,13 @@ import {
   validateBackendImageDimensions,
 } from "@/infrastructure/storage/minio";
 import { db } from "@/infrastructure/db/client";
-import { photos, resumePhotos } from "@/infrastructure/db/schema";
+import { photos, resumePhotos, resumes } from "@/infrastructure/db/schema";
 
 import {
   FileTooLargeError,
   FileTypeMismatchError,
   ImageTooSmallError,
+  InvalidCropDataError,
   InvalidFileTypeError,
   MaxPhotosReachedError,
   PhotoNotFoundError,
@@ -32,6 +33,7 @@ import {
 import {
   getBackendMimeTypeFromMagic,
   sanitizeBackendFileName,
+  validateBackendCropBounds,
   validateBackendFileSize,
   validateBackendFileType,
 } from "./file-validation";
@@ -56,6 +58,21 @@ function requirePublicUrl(path: string): string {
   }
 
   return publicUrl;
+}
+
+async function lockResumePhotoSlot(
+  tx: Parameters<typeof db.transaction>[0] extends (arg: infer T) => unknown ? T : never,
+  resumeId: string
+): Promise<void> {
+  await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${resumeId})::bigint)`);
+}
+
+async function deleteStoredObject(path: string | null | undefined): Promise<void> {
+  if (!path) {
+    return;
+  }
+
+  await deleteFromBackendMinio(path).catch(() => undefined);
 }
 
 export const photoService = {
@@ -97,20 +114,26 @@ export const photoService = {
 
     await uploadToBackendMinio(buffer, originalPath, actualMimeType);
 
-    const [newPhoto] = await db
-      .insert(photos)
-      .values({
-        id: photoId,
-        userId,
-        originalPath,
-        fileName: sanitizedFileName,
-        fileSize: buffer.length,
-        mimeType: actualMimeType,
-        width,
-        height,
-        isActive: true,
-      })
-      .returning();
+    let newPhoto: typeof photos.$inferSelect;
+    try {
+      [newPhoto] = await db
+        .insert(photos)
+        .values({
+          id: photoId,
+          userId,
+          originalPath,
+          fileName: sanitizedFileName,
+          fileSize: buffer.length,
+          mimeType: actualMimeType,
+          width,
+          height,
+          isActive: true,
+        })
+        .returning();
+    } catch (error) {
+      await deleteStoredObject(originalPath);
+      throw error;
+    }
 
     return {
       id: newPhoto.id,
@@ -144,16 +167,13 @@ export const photoService = {
     if (!photo) {
       throw new PhotoNotFoundError();
     }
+    if (!validateBackendCropBounds(payload.cropData, photo)) {
+      throw new InvalidCropDataError();
+    }
 
     const resumeRecord = await photoRepository.findUserResume(userId, payload.resumeId);
     if (!resumeRecord) {
       throw new ResumeNotFoundForPhotoError();
-    }
-
-    const existingResumePhoto = await photoRepository.findResumePhotoByResume(payload.resumeId);
-    if (existingResumePhoto) {
-      await deleteFromBackendMinio(existingResumePhoto.processedPath).catch(() => undefined);
-      await db.delete(resumePhotos).where(eq(resumePhotos.resumeId, payload.resumeId));
     }
 
     const originalBuffer = await getFromBackendMinio(photo.originalPath);
@@ -170,16 +190,45 @@ export const photoService = {
       }
     );
 
-    const [newResumePhoto] = await db
-      .insert(resumePhotos)
-      .values({
-        id: uuidv4(),
-        resumeId: payload.resumeId,
-        photoId: payload.photoId,
-        processedPath: processedResult.path,
-        cropData: JSON.stringify(payload.cropData),
-      })
-      .returning();
+    let oldProcessedPath: string | null = null;
+    let newResumePhoto: typeof resumePhotos.$inferSelect;
+
+    try {
+      newResumePhoto = await db.transaction(async (tx) => {
+        await lockResumePhotoSlot(tx, payload.resumeId);
+
+        const [existingResumePhoto] = await tx
+          .select()
+          .from(resumePhotos)
+          .where(eq(resumePhotos.resumeId, payload.resumeId))
+          .limit(1);
+
+        if (existingResumePhoto) {
+          oldProcessedPath = existingResumePhoto.processedPath;
+          await tx
+            .delete(resumePhotos)
+            .where(eq(resumePhotos.id, existingResumePhoto.id));
+        }
+
+        const [insertedResumePhoto] = await tx
+          .insert(resumePhotos)
+          .values({
+            id: uuidv4(),
+            resumeId: payload.resumeId,
+            photoId: payload.photoId,
+            processedPath: processedResult.path,
+            cropData: JSON.stringify(payload.cropData),
+          })
+          .returning();
+
+        return insertedResumePhoto;
+      });
+    } catch (error) {
+      await deleteStoredObject(processedResult.path);
+      throw error;
+    }
+
+    await deleteStoredObject(oldProcessedPath);
 
     return {
       id: newResumePhoto.id,
@@ -198,8 +247,9 @@ export const photoService = {
     if (!resumePhotoRecord) {
       throw new ResumePhotoNotFoundError();
     }
-
-    await deleteFromBackendMinio(resumePhotoRecord.resumePhoto.processedPath).catch(() => undefined);
+    if (!validateBackendCropBounds(payload.cropData, resumePhotoRecord.photo)) {
+      throw new InvalidCropDataError();
+    }
 
     const originalBuffer = await getFromBackendMinio(resumePhotoRecord.photo.originalPath);
     const { maxWidth, maxHeight } = getBackendProcessingDimensions(payload.templateId);
@@ -215,14 +265,47 @@ export const photoService = {
       }
     );
 
-    await db
-      .update(resumePhotos)
-      .set({
-        processedPath: processedResult.path,
-        cropData: JSON.stringify(payload.cropData),
-        updatedAt: new Date(),
-      })
-      .where(eq(resumePhotos.id, payload.resumePhotoId));
+    let oldProcessedPath: string | null = null;
+    try {
+      await db.transaction(async (tx) => {
+        await lockResumePhotoSlot(tx, resumePhotoRecord.resume.id);
+
+        const [currentResumePhoto] = await tx
+          .select({
+            id: resumePhotos.id,
+            processedPath: resumePhotos.processedPath,
+          })
+          .from(resumePhotos)
+          .innerJoin(resumes, eq(resumePhotos.resumeId, resumes.id))
+          .where(
+            and(
+              eq(resumePhotos.id, payload.resumePhotoId),
+              eq(resumes.userId, userId)
+            )
+          )
+          .limit(1);
+
+        if (!currentResumePhoto) {
+          throw new ResumePhotoNotFoundError();
+        }
+
+        oldProcessedPath = currentResumePhoto.processedPath;
+
+        await tx
+          .update(resumePhotos)
+          .set({
+            processedPath: processedResult.path,
+            cropData: JSON.stringify(payload.cropData),
+            updatedAt: new Date(),
+          })
+          .where(eq(resumePhotos.id, currentResumePhoto.id));
+      });
+    } catch (error) {
+      await deleteStoredObject(processedResult.path);
+      throw error;
+    }
+
+    await deleteStoredObject(oldProcessedPath);
 
     return {
       url: requirePublicUrl(processedResult.path),
@@ -237,8 +320,10 @@ export const photoService = {
       throw new ResumePhotoNotFoundError();
     }
 
-    await deleteFromBackendMinio(resumePhotoRecord.resumePhoto.processedPath).catch(() => undefined);
-    await db.delete(resumePhotos).where(eq(resumePhotos.id, resumePhotoRecord.resumePhoto.id));
+    await db
+      .delete(resumePhotos)
+      .where(eq(resumePhotos.id, resumePhotoRecord.resumePhoto.id));
+    await deleteStoredObject(resumePhotoRecord.resumePhoto.processedPath);
   },
 
   async deletePhoto(userId: string, photoId: string, force: boolean) {
@@ -255,16 +340,20 @@ export const photoService = {
       };
     }
 
-    if (usages.length > 0) {
-      for (const usage of usages) {
-        await deleteFromBackendMinio(usage.processedPath).catch(() => undefined);
+    await db.transaction(async (tx) => {
+      if (usages.length > 0) {
+        await tx.delete(resumePhotos).where(eq(resumePhotos.photoId, photoId));
       }
 
-      await db.delete(resumePhotos).where(eq(resumePhotos.photoId, photoId));
-    }
+      await tx
+        .delete(photos)
+        .where(and(eq(photos.id, photoId), eq(photos.userId, userId)));
+    });
 
-    await deleteFromBackendMinio(photo.originalPath).catch(() => undefined);
-    await db.delete(photos).where(eq(photos.id, photoId));
+    for (const usage of usages) {
+      await deleteStoredObject(usage.processedPath);
+    }
+    await deleteStoredObject(photo.originalPath);
 
     return {
       conflict: false as const,

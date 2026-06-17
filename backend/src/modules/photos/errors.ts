@@ -57,6 +57,12 @@ export class ImageTooSmallError extends ApiError {
   }
 }
 
+export class InvalidCropDataError extends ApiError {
+  constructor() {
+    super("Crop area is outside the image bounds", 400);
+  }
+}
+
 export class MaxPhotosReachedError extends ApiError {
   constructor(maxPhotos: number) {
     super(

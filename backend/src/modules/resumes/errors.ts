@@ -5,3 +5,9 @@ export class ResumeNotFoundError extends ApiError {
     super("Resume not found", 404);
   }
 }
+
+export class ResumeVersionConflictError extends ApiError {
+  constructor() {
+    super("Resume has been modified by another request", 409);
+  }
+}

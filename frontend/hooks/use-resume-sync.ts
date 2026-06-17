@@ -3,6 +3,7 @@ import { useCVStore } from "@/store/useCVStore";
 import { authClient } from "@/lib/auth/auth-client";
 import { useSearchParams } from "next/navigation";
 import { fetchResume, saveResume } from "@/lib/api/resumes";
+import { ApiFetchError } from "@/lib/api/client";
 import { logger } from "@/lib/logger";
 import type { CVState } from "@/types/cv";
 import type { ResumeContent } from "@contracts/resume";
@@ -33,12 +34,17 @@ export function useResumeSync() {
     selectedTemplate,
     designSettings,
     hasUnsavedChanges,
+    saveConflict,
     setResume,
     setResumeId,
+    setResumeVersion,
     resetStore,
     setIsLoading,
     setIsSaving,
     setSaved,
+    setSaveConflict,
+    setSaveError,
+    clearSaveIssue,
     resumeId: storedResumeId,
   } = useCVStore();
 
@@ -98,6 +104,7 @@ export function useResumeSync() {
         if ("content" in data && data.content) {
           setResume(data.content as Partial<CVState> & { summary?: string });
           setResumeId(data.id);
+          setResumeVersion(data.version);
           lastLoadedResumeId.current = data.id;
         } else if (!resumeIdFromUrl) {
           // Create new resume
@@ -109,6 +116,7 @@ export function useResumeSync() {
 
           if (createData.id) {
             setResumeId(createData.id);
+            setResumeVersion(createData.version);
             lastLoadedResumeId.current = createData.id;
           }
         } else {
@@ -118,6 +126,7 @@ export function useResumeSync() {
         }
       } catch (error) {
         if (!isCancelled) {
+          setSaveError("Unable to load this resume. Please refresh and try again.");
           logger.error(
             "Failed to load resume",
             error instanceof Error ? error : undefined
@@ -140,8 +149,10 @@ export function useResumeSync() {
     resumeIdFromUrl,
     setResume,
     setResumeId,
+    setResumeVersion,
     resetStore,
     setIsLoading,
+    setSaveError,
     cancelPendingSave,
   ]);
 
@@ -167,12 +178,17 @@ export function useResumeSync() {
         // that lands while the request is in flight.
         const versionAtSaveStart = state.mutationCount;
 
-        await saveResume({
+        const savedResume = await saveResume({
           id: targetResumeId,
+          version: state.resumeVersion ?? undefined,
           content: buildResumeContent(state),
         });
 
         const after = useCVStore.getState();
+        if (after.resumeId === targetResumeId) {
+          setResumeVersion(savedResume.version);
+        }
+
         // Only mark as saved if we're still on this resume AND no new
         // typing landed during the round-trip. Otherwise leave
         // hasUnsavedChanges true so the debounce effect's pending timeout
@@ -184,6 +200,12 @@ export function useResumeSync() {
           setSaved();
         }
       } catch (error) {
+        if (error instanceof ApiFetchError && error.status === 409) {
+          setSaveConflict();
+          return;
+        }
+
+        setSaveError("Unable to save changes. Please check your connection.");
         logger.error(
           "Failed to save resume",
           error instanceof Error ? error : undefined
@@ -194,12 +216,14 @@ export function useResumeSync() {
         pendingChangesForResumeId.current = null;
       }
     },
-    [setIsSaving, setSaved]
+    [setIsSaving, setResumeVersion, setSaveConflict, setSaveError, setSaved]
   );
 
   // Debounced save effect - tracks which resume the changes belong to
   useEffect(() => {
-    if (!session?.user || !activeResumeId || !hasUnsavedChanges) return;
+    if (!session?.user || !activeResumeId || !hasUnsavedChanges || saveConflict) {
+      return;
+    }
 
     // Cancel any existing timeout
     if (saveTimeoutRef.current) {
@@ -230,6 +254,7 @@ export function useResumeSync() {
     session,
     activeResumeId,
     hasUnsavedChanges,
+    saveConflict,
     performSave,
   ]);
 
@@ -248,8 +273,15 @@ export function useResumeSync() {
         // Fire and forget save
         saveResume({
           id: state.resumeId,
+          version: state.resumeVersion ?? undefined,
           content: buildResumeContent(state),
         }).catch((error) => {
+          if (error instanceof ApiFetchError && error.status === 409) {
+            setSaveConflict();
+            return;
+          }
+
+          setSaveError("Unable to save changes before closing the editor.");
           logger.error(
             "Failed to save resume on cleanup",
             error instanceof Error ? error : undefined
@@ -257,7 +289,7 @@ export function useResumeSync() {
         });
       }
     };
-  }, [cancelPendingSave]);
+  }, [cancelPendingSave, setSaveConflict, setSaveError]);
 
   // Imperative "save right now" — used by Cmd/Ctrl+S keyboard shortcut.
   // Cancels any pending debounced save, then awaits the actual write.
@@ -268,5 +300,105 @@ export function useResumeSync() {
     await performSave(targetId);
   }, [cancelPendingSave, performSave]);
 
-  return { saveNow };
+  const reloadRemote = useCallback(async (): Promise<void> => {
+    const targetId = useCVStore.getState().resumeId;
+    if (!targetId) return;
+
+    cancelPendingSave();
+    setIsLoading(true);
+
+    try {
+      const data = await fetchResume(targetId);
+      if (useCVStore.getState().resumeId !== targetId) {
+        return;
+      }
+
+      if ("content" in data && data.content) {
+        setResume(data.content as Partial<CVState> & { summary?: string });
+        setResumeId(data.id);
+        setResumeVersion(data.version);
+        clearSaveIssue();
+        lastLoadedResumeId.current = data.id;
+      }
+    } catch (error) {
+      setSaveError("Unable to reload the latest resume version.");
+      logger.error(
+        "Failed to reload resume after conflict",
+        error instanceof Error ? error : undefined
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  }, [
+    cancelPendingSave,
+    clearSaveIssue,
+    setIsLoading,
+    setResume,
+    setResumeId,
+    setResumeVersion,
+    setSaveError,
+  ]);
+
+  const overwriteWithLocal = useCallback(async (): Promise<void> => {
+    const state = useCVStore.getState();
+    if (!state.resumeId) return;
+
+    cancelPendingSave();
+    setIsSaving(true);
+
+    try {
+      const targetId = state.resumeId;
+      const mutationCountAtStart = state.mutationCount;
+      const latest = await fetchResume(targetId);
+      if (useCVStore.getState().resumeId !== targetId) {
+        return;
+      }
+
+      if (!("content" in latest) || !latest.content) {
+        setSaveError("Unable to find the latest resume version.");
+        return;
+      }
+
+      const current = useCVStore.getState();
+      const savedResume = await saveResume({
+        id: targetId,
+        version: latest.version,
+        content: buildResumeContent(current),
+      });
+
+      const after = useCVStore.getState();
+      if (after.resumeId !== targetId) {
+        return;
+      }
+
+      setResumeVersion(savedResume.version);
+      if (after.mutationCount === mutationCountAtStart) {
+        setSaved();
+      }
+      clearSaveIssue();
+    } catch (error) {
+      if (error instanceof ApiFetchError && error.status === 409) {
+        setSaveConflict("The resume changed again before your local copy was saved.");
+        return;
+      }
+
+      setSaveError("Unable to overwrite with your local changes.");
+      logger.error(
+        "Failed to overwrite resume after conflict",
+        error instanceof Error ? error : undefined
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }, [
+    cancelPendingSave,
+    clearSaveIssue,
+    setIsSaving,
+    setResumeVersion,
+    setSaveConflict,
+    setSaveError,
+    setSaved,
+  ]);
+
+  return { saveNow, reloadRemote, overwriteWithLocal };
 }

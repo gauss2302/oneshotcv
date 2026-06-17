@@ -1,5 +1,5 @@
 import type { ResumeDocument, ResumeSummary, SaveResumeRequest } from "@/contracts/resume";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
 import { db } from "@/infrastructure/db/client";
 import {
@@ -9,7 +9,7 @@ import {
   skills,
 } from "@/infrastructure/db/schema";
 
-import { ResumeNotFoundError } from "./errors";
+import { ResumeNotFoundError, ResumeVersionConflictError } from "./errors";
 import {
   mapResumeRecordToDocument,
   mapResumeRowToSummary,
@@ -67,6 +67,11 @@ async function replaceResumeCollections(
   }
 }
 
+type SaveResumeResult = {
+  id: string;
+  version: number;
+};
+
 export const resumeService = {
   async getResume(userId: string, resumeId?: string): Promise<ResumeDocument | null> {
     const resume = await resumeRepository.findResumeForUser(userId, resumeId);
@@ -82,7 +87,7 @@ export const resumeService = {
     return rows.map(mapResumeRowToSummary);
   },
 
-  async saveResume(userId: string, payload: SaveResumeRequest): Promise<string> {
+  async saveResume(userId: string, payload: SaveResumeRequest): Promise<SaveResumeResult> {
     if (payload.id) {
       const existingResume = await resumeRepository.findResumeForUser(userId, payload.id);
       if (!existingResume) {
@@ -93,35 +98,57 @@ export const resumeService = {
         existingTitle: existingResume.title,
       });
 
-      await db.transaction(async (tx) => {
-        await tx
+      const savedResume = await db.transaction(async (tx) => {
+        const [updatedResume] = await tx
           .update(resumes)
-          .set(resumeValues)
-          .where(eq(resumes.id, payload.id!));
+          .set({
+            ...resumeValues,
+            version: sql`${resumes.version} + 1`,
+          })
+          .where(
+            payload.version === undefined
+              ? and(eq(resumes.id, payload.id!), eq(resumes.userId, userId))
+              : and(
+                  eq(resumes.id, payload.id!),
+                  eq(resumes.userId, userId),
+                  eq(resumes.version, payload.version)
+                )
+          )
+          .returning({
+            id: resumes.id,
+            version: resumes.version,
+          });
+
+        if (!updatedResume) {
+          throw payload.version === undefined
+            ? new ResumeNotFoundError()
+            : new ResumeVersionConflictError();
+        }
 
         await replaceResumeCollections(tx, payload.id!, payload);
+        return updatedResume;
       });
 
-      return payload.id;
+      return savedResume;
     }
 
     if (payload.createNew) {
       const resumeValues = mapSaveRequestToResumeValues(payload);
 
-      const newResumeId = await db.transaction(async (tx) => {
+      const newResume = await db.transaction(async (tx) => {
         const [newResume] = await tx
           .insert(resumes)
           .values({
             ...resumeValues,
             userId,
           })
-          .returning({ id: resumes.id });
+          .returning({ id: resumes.id, version: resumes.version });
 
         await replaceResumeCollections(tx, newResume.id, payload);
-        return newResume.id;
+        return newResume;
       });
 
-      return newResumeId;
+      return newResume;
     }
 
     const existingResume = await resumeRepository.findFirstResumeForUser(userId);
@@ -130,34 +157,46 @@ export const resumeService = {
         existingTitle: existingResume.title,
       });
 
-      await db.transaction(async (tx) => {
-        await tx
+      const savedResume = await db.transaction(async (tx) => {
+        const [updatedResume] = await tx
           .update(resumes)
-          .set(resumeValues)
-          .where(eq(resumes.id, existingResume.id));
+          .set({
+            ...resumeValues,
+            version: sql`${resumes.version} + 1`,
+          })
+          .where(and(eq(resumes.id, existingResume.id), eq(resumes.userId, userId)))
+          .returning({
+            id: resumes.id,
+            version: resumes.version,
+          });
+
+        if (!updatedResume) {
+          throw new ResumeNotFoundError();
+        }
 
         await replaceResumeCollections(tx, existingResume.id, payload);
+        return updatedResume;
       });
 
-      return existingResume.id;
+      return savedResume;
     }
 
     const resumeValues = mapSaveRequestToResumeValues(payload);
 
-    const newResumeId = await db.transaction(async (tx) => {
+    const newResume = await db.transaction(async (tx) => {
       const [newResume] = await tx
         .insert(resumes)
         .values({
           ...resumeValues,
           userId,
         })
-        .returning({ id: resumes.id });
+        .returning({ id: resumes.id, version: resumes.version });
 
       await replaceResumeCollections(tx, newResume.id, payload);
-      return newResume.id;
+      return newResume;
     });
 
-    return newResumeId;
+    return newResume;
   },
 
   async deleteResume(userId: string, resumeId: string): Promise<void> {

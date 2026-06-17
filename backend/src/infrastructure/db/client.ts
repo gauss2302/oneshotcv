@@ -17,13 +17,18 @@ const pool = new Pool({
 export const db = drizzle(pool, { schema });
 
 export async function checkBackendDatabaseHealth(): Promise<boolean> {
+  const client = await pool.connect().catch(() => null);
+  if (!client) {
+    return false;
+  }
+
   try {
-    const client = await pool.connect();
     await client.query("SELECT 1");
-    client.release();
     return true;
   } catch {
     return false;
+  } finally {
+    client.release();
   }
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  validateBackendCropBounds,
   getBackendMimeTypeFromMagic,
   validateBackendFileType,
 } from "./file-validation";
@@ -23,5 +24,23 @@ describe("photo file validation", () => {
     ]);
 
     expect(validateBackendFileType(pngBuffer, "image/jpeg")).toBe(false);
+  });
+
+  it("accepts crop data inside image bounds", () => {
+    expect(
+      validateBackendCropBounds(
+        { x: 20, y: 30, width: 120, height: 160 },
+        { width: 300, height: 400 }
+      )
+    ).toBe(true);
+  });
+
+  it("rejects crop data outside image bounds", () => {
+    expect(
+      validateBackendCropBounds(
+        { x: 250, y: 30, width: 120, height: 160 },
+        { width: 300, height: 400 }
+      )
+    ).toBe(false);
   });
 });

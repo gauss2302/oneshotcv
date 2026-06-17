@@ -16,7 +16,10 @@ import { arrayMove } from "@dnd-kit/sortable";
 
 interface CVStore extends CVState {
   resumeId: string | null;
+  resumeVersion: number | null;
   selectedTemplate: string;
+  saveError: string | null;
+  saveConflict: boolean;
 
   // Loading & sync states
   isLoading: boolean;
@@ -51,12 +54,16 @@ interface CVStore extends CVState {
   updateDesign: (settings: Partial<CVDesignSettings>) => void;
   setResume: (content: Partial<CVState> & { summary?: string }) => void;
   setResumeId: (id: string) => void;
+  setResumeVersion: (version: number | null) => void;
   resetStore: () => void;
 
   // Loading & sync actions
   setIsLoading: (loading: boolean) => void;
   setIsSaving: (saving: boolean) => void;
   setSaved: () => void;
+  setSaveError: (message: string) => void;
+  setSaveConflict: (message?: string) => void;
+  clearSaveIssue: () => void;
   markUnsaved: () => void;
 }
 
@@ -76,7 +83,10 @@ export const useCVStore = create<CVStore>((set) => ({
   // Initial state
   ...createEmptyCVState(),
   resumeId: null,
+  resumeVersion: null,
   selectedTemplate: "classic",
+  saveError: null,
+  saveConflict: false,
 
   // Loading & sync states
   isLoading: true,
@@ -95,6 +105,8 @@ export const useCVStore = create<CVStore>((set) => ({
       return {
         personalInfo: { ...state.personalInfo, ...data },
         hasUnsavedChanges: true,
+        saveError: null,
+        saveConflict: false,
         mutationCount: state.mutationCount + 1,
       };
     }),
@@ -113,6 +125,8 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       ],
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -122,6 +136,8 @@ export const useCVStore = create<CVStore>((set) => ({
         edu.id === id ? { ...edu, ...data } : edu
       ),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -129,6 +145,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       education: state.education.filter((edu) => edu.id !== id),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -136,6 +154,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       education: arrayMove(state.education, oldIndex, newIndex),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -156,6 +176,8 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       ],
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -165,6 +187,8 @@ export const useCVStore = create<CVStore>((set) => ({
         exp.id === id ? { ...exp, ...data } : exp
       ),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -172,6 +196,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       experience: state.experience.filter((exp) => exp.id !== id),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -179,6 +205,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       experience: arrayMove(state.experience, oldIndex, newIndex),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -193,6 +221,8 @@ export const useCVStore = create<CVStore>((set) => ({
         },
       ],
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -202,6 +232,8 @@ export const useCVStore = create<CVStore>((set) => ({
         skill.id === id ? { ...skill, ...data } : skill
       ),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -209,6 +241,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       skills: state.skills.filter((skill) => skill.id !== id),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -216,6 +250,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       skills: arrayMove(state.skills, oldIndex, newIndex),
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -223,6 +259,8 @@ export const useCVStore = create<CVStore>((set) => ({
     set((state) => ({
       selectedTemplate: template,
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 
@@ -278,6 +316,8 @@ export const useCVStore = create<CVStore>((set) => ({
         dataVersion: state.dataVersion + 1,
         hasUnsavedChanges: false,
         isSaving: false,
+        saveError: null,
+        saveConflict: false,
       };
     }),
 
@@ -286,11 +326,19 @@ export const useCVStore = create<CVStore>((set) => ({
       resumeId: id,
     })),
 
+  setResumeVersion: (version) =>
+    set(() => ({
+      resumeVersion: version,
+    })),
+
   resetStore: () =>
     set((state) => ({
       ...createEmptyCVState(),
       resumeId: null,
+      resumeVersion: null,
       selectedTemplate: "classic",
+      saveError: null,
+      saveConflict: false,
       isLoading: true,
       hasUnsavedChanges: false,
       dataVersion: state.dataVersion + 1,
@@ -311,12 +359,38 @@ export const useCVStore = create<CVStore>((set) => ({
     set(() => ({
       isSaving: false,
       hasUnsavedChanges: false,
+      saveError: null,
+      saveConflict: false,
       lastSavedAt: new Date(),
+    })),
+
+  setSaveError: (message) =>
+    set((state) => ({
+      isSaving: false,
+      hasUnsavedChanges: state.hasUnsavedChanges,
+      saveError: message,
+      saveConflict: false,
+    })),
+
+  setSaveConflict: (message = "This resume was changed in another tab or device.") =>
+    set(() => ({
+      isSaving: false,
+      hasUnsavedChanges: true,
+      saveError: message,
+      saveConflict: true,
+    })),
+
+  clearSaveIssue: () =>
+    set(() => ({
+      saveError: null,
+      saveConflict: false,
     })),
 
   markUnsaved: () =>
     set((state) => ({
       hasUnsavedChanges: true,
+      saveError: null,
+      saveConflict: false,
       mutationCount: state.mutationCount + 1,
     })),
 }));

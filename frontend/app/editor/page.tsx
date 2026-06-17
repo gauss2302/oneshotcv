@@ -3,7 +3,7 @@
 import React, { Suspense, useMemo, memo, useCallback, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { generatePDF } from '@/lib/generatePDF';
-import { Download, ArrowLeft } from 'lucide-react';
+import { AlertTriangle, Download, ArrowLeft, RefreshCw, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
 import { useResumeSync } from '@/hooks/use-resume-sync';
 import { authClient } from '@/lib/auth/auth-client';
@@ -118,22 +118,26 @@ EditorNavbar.displayName = 'EditorNavbar';
 
 // Real-time update indicator component
 const RealTimeIndicator = memo(() => {
-  const { hasUnsavedChanges, isSaving } = useCVStore();
-  
-  if (!hasUnsavedChanges && !isSaving) return null;
+  const { hasUnsavedChanges, isSaving, saveError, saveConflict } = useCVStore();
+
+  if (!hasUnsavedChanges && !isSaving && !saveError) return null;
+
+  const isIssue = Boolean(saveError);
 
   return (
     <div className="fixed top-20 right-4 z-30 animate-in slide-in-from-right duration-300">
       <div className={`flex items-center gap-2 px-3 py-2 rounded-lg shadow-lg backdrop-blur-sm ${
-        isSaving 
-          ? 'bg-blue-500/90 text-white' 
-          : 'bg-amber-500/90 text-white'
+        isIssue
+          ? 'bg-red-600/90 text-white'
+          : isSaving
+            ? 'bg-blue-500/90 text-white'
+            : 'bg-amber-500/90 text-white'
       }`}>
         <div className={`w-2 h-2 rounded-full ${
-          isSaving ? 'bg-white animate-pulse' : 'bg-white'
+          isSaving || saveConflict ? 'bg-white animate-pulse' : 'bg-white'
         }`} />
         <span className="text-xs font-medium">
-          {isSaving ? 'Saving...' : 'Changes detected'}
+          {saveConflict ? 'Save conflict' : saveError ? 'Save failed' : isSaving ? 'Saving...' : 'Changes detected'}
         </span>
       </div>
     </div>
@@ -141,9 +145,65 @@ const RealTimeIndicator = memo(() => {
 });
 RealTimeIndicator.displayName = 'RealTimeIndicator';
 
+const SaveIssueBanner = memo(({
+  onReload,
+  onKeepLocal,
+}: {
+  onReload: () => void;
+  onKeepLocal: () => void;
+}) => {
+  const { saveError, saveConflict, isSaving, isLoading } = useCVStore();
+
+  if (!saveError) {
+    return null;
+  }
+
+  return (
+    <section className="border-b border-red-200 bg-red-50 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3 text-red-900">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" />
+          <div>
+            <p className="text-sm font-semibold">
+              {saveConflict ? 'This resume changed elsewhere' : 'Resume could not be saved'}
+            </p>
+            <p className="mt-0.5 text-sm text-red-700">{saveError}</p>
+          </div>
+        </div>
+
+        {saveConflict && (
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={onReload}
+              disabled={isSaving || isLoading}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-red-200 bg-white px-3 text-sm font-medium text-red-800 shadow-sm transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+              title="Reload the latest saved version"
+            >
+              <RefreshCw size={16} />
+              <span>Reload latest</span>
+            </button>
+            <button
+              type="button"
+              onClick={onKeepLocal}
+              disabled={isSaving || isLoading}
+              className="inline-flex h-9 items-center gap-2 rounded-md bg-red-600 px-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              title="Overwrite the saved version with this local copy"
+            >
+              <UploadCloud size={16} />
+              <span>Keep local</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+});
+SaveIssueBanner.displayName = 'SaveIssueBanner';
+
 function EditorContent() {
   const { data: session, isPending: isSessionPending } = authClient.useSession();
-  const { saveNow } = useResumeSync();
+  const { saveNow, reloadRemote, overwriteWithLocal } = useResumeSync();
 
   // Keyboard shortcuts:
   //   Cmd/Ctrl+S → flush any debounced changes and save immediately
@@ -217,6 +277,15 @@ function EditorContent() {
     >
       {/* Navbar */}
       <EditorNavbar session={session} isSessionPending={isSessionPending} />
+
+      <SaveIssueBanner
+        onReload={() => {
+          void reloadRemote();
+        }}
+        onKeepLocal={() => {
+          void overwriteWithLocal();
+        }}
+      />
 
       {/* Real-time update indicator */}
       <RealTimeIndicator />

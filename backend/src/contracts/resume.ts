@@ -92,6 +92,7 @@ export const resumeContentSchema = z.object({
 export const resumeDocumentSchema = z.object({
   id: resumeIdSchema,
   title: z.string().min(1).max(200),
+  version: z.number().int().nonnegative(),
   content: resumeContentSchema,
 });
 
@@ -117,6 +118,7 @@ export const resumeGetResponseSchema = z.union([
 export const saveResumeRequestSchema = z.object({
   id: resumeIdSchema.optional(),
   title: z.string().trim().min(1).max(200).optional(),
+  version: z.number().int().nonnegative().optional(),
   createNew: z.boolean().optional(),
   content: resumeContentSchema,
 });
@@ -124,6 +126,7 @@ export const saveResumeRequestSchema = z.object({
 export const saveResumeResponseSchema = z.object({
   success: z.literal(true),
   id: resumeIdSchema,
+  version: z.number().int().nonnegative(),
 });
 
 export const deleteResumeRequestSchema = z.object({

@@ -54,6 +54,7 @@ export function mapResumeRecordToDocument(resume: ResumeRecord): ResumeDocument 
   return {
     id: resume.id,
     title: resume.title ?? DEFAULT_TITLE,
+    version: resume.version,
     content: {
       personalInfo: {
         fullName: resume.fullName,

@@ -62,14 +62,15 @@ export const registerResumeRoutes: FastifyPluginAsync = async (app) => {
     }
 
     try {
-      const resumeId = await resumeService.saveResume(
+      const savedResume = await resumeService.saveResume(
         session.user.id,
         parsedRequest.data
       );
 
       return reply.send({
         success: true,
-        id: resumeId,
+        id: savedResume.id,
+        version: savedResume.version,
       });
     } catch (error) {
       if (error instanceof ApiError) {

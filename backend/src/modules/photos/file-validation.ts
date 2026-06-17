@@ -58,6 +58,25 @@ export function validateBackendFileSize(
   return size > 0 && size <= maxSize;
 }
 
+export function validateBackendCropBounds(
+  cropData: { x: number; y: number; width: number; height: number },
+  image: { width: number; height: number }
+): boolean {
+  const left = Math.round(cropData.x);
+  const top = Math.round(cropData.y);
+  const width = Math.round(cropData.width);
+  const height = Math.round(cropData.height);
+
+  return (
+    left >= 0
+    && top >= 0
+    && width > 0
+    && height > 0
+    && left + width <= image.width
+    && top + height <= image.height
+  );
+}
+
 export function getBackendMimeTypeFromMagic(buffer: Buffer): string | null {
   if (buffer.length < 4) {
     return null;
