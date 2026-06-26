@@ -19,8 +19,13 @@ COPY backend/src/contracts /app/contracts
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_BACKEND_URL
 ARG NEXT_PUBLIC_APP_URL
+# Needed at build time: next.config.ts bakes it into the CSP `img-src` so the
+# browser is allowed to load resume photos from MinIO. Without it the images
+# are blocked by CSP and render as a blank/gray box.
+ARG NEXT_PUBLIC_MINIO_PUBLIC_URL
 ENV NEXT_PUBLIC_BACKEND_URL=${NEXT_PUBLIC_BACKEND_URL}
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
+ENV NEXT_PUBLIC_MINIO_PUBLIC_URL=${NEXT_PUBLIC_MINIO_PUBLIC_URL}
 
 RUN npm run build
 

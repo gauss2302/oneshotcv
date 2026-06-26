@@ -35,7 +35,7 @@ export const getDesignerTemplateBlocks: TemplateGenerator = (
 
   // Default to gold when the user hasn't picked a custom theme; otherwise
   // honour their colour selection.
-  const accentColor = themeColor === "#3b82f6" ? "#E0B656" : themeColor;
+  const accentColor = themeColor === "#DB4B2E" ? "#E0B656" : themeColor;
 
   const baseStyle: React.CSSProperties = {
     fontFamily:

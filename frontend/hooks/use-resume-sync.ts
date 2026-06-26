@@ -10,6 +10,65 @@ import type { ResumeContent } from "@contracts/resume";
 
 const SAVE_DEBOUNCE_MS = 1500;
 
+type ValidationDetail = { path: (string | number)[]; code?: string; max?: number };
+
+function firstValidationDetail(payload: unknown): ValidationDetail | null {
+  if (!payload || typeof payload !== "object") return null;
+  const details = (payload as { details?: unknown }).details;
+  if (!Array.isArray(details) || details.length === 0) return null;
+  const d = details[0] as Record<string, unknown>;
+  return {
+    path: Array.isArray(d.path) ? (d.path as (string | number)[]) : [],
+    code: typeof d.code === "string" ? d.code : undefined,
+    max: typeof d.maximum === "number" ? d.maximum : undefined,
+  };
+}
+
+function fieldLabel(path: (string | number)[]): string {
+  const seg = path.filter((x): x is string => typeof x === "string");
+  const last = seg[seg.length - 1] ?? "field";
+  if (seg.includes("experience")) {
+    return last === "description" ? "An experience description" : `An experience ${last}`;
+  }
+  if (seg.includes("education")) {
+    return last === "description" ? "An education description" : `An education ${last}`;
+  }
+  if (seg.includes("skills")) return `A skill ${last}`;
+  if (seg.includes("personalInfo")) {
+    const map: Record<string, string> = {
+      summary: "summary",
+      title: "professional title",
+      fullName: "name",
+      address: "address",
+      email: "email",
+      phone: "phone",
+    };
+    return `Your ${map[last] ?? last}`;
+  }
+  return `The ${last}`;
+}
+
+/**
+ * A failed save is usually NOT a network problem on localhost — a 400 is the
+ * backend rejecting content (almost always a field over its length limit).
+ * Surface the actual field so the user can fix it instead of blaming the
+ * connection.
+ */
+function describeSaveError(error: unknown): string {
+  if (error instanceof ApiFetchError && error.status === 400) {
+    const detail = firstValidationDetail(error.payload);
+    if (detail) {
+      const field = fieldLabel(detail.path);
+      if (detail.code === "too_big" && typeof detail.max === "number") {
+        return `${field} is too long (max ${detail.max.toLocaleString()} characters). Shorten it and your changes will save.`;
+      }
+      return `${field} couldn't be saved — please review it.`;
+    }
+    return "Some changes couldn't be saved — please review your inputs.";
+  }
+  return "Unable to save changes. Please check your connection.";
+}
+
 function buildResumeContent(state: CVState): ResumeContent {
   return {
     personalInfo: state.personalInfo,
@@ -205,7 +264,7 @@ export function useResumeSync() {
           return;
         }
 
-        setSaveError("Unable to save changes. Please check your connection.");
+        setSaveError(describeSaveError(error));
         logger.error(
           "Failed to save resume",
           error instanceof Error ? error : undefined
@@ -382,7 +441,7 @@ export function useResumeSync() {
         return;
       }
 
-      setSaveError("Unable to overwrite with your local changes.");
+      setSaveError(describeSaveError(error));
       logger.error(
         "Failed to overwrite resume after conflict",
         error instanceof Error ? error : undefined

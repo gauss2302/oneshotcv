@@ -4,6 +4,8 @@ import { Palette, Type, Scaling, AlignLeft, AlignCenter, AlignRight, AlignJustif
 import type { CVDesignSettings } from '@/types/cv';
 
 const colors = [
+  { name: 'Vermillion', value: '#DB4B2E' },
+  { name: 'Ink', value: '#1B1815' },
   { name: 'Blue', value: '#3b82f6' },
   { name: 'Green', value: '#10b981' },
   { name: 'Purple', value: '#8b5cf6' },
@@ -62,7 +64,7 @@ export const DesignForm: React.FC = () => {
       {/* Theme Color */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Palette size={20} className="text-blue-600" />
+          <Palette size={20} className="text-[#DB4B2E]" />
           <h3>Theme Color</h3>
         </div>
         
@@ -73,7 +75,7 @@ export const DesignForm: React.FC = () => {
               onClick={() => updateDesign({ themeColor: color.value })}
               className={`
                 w-full aspect-square rounded-lg border-2 flex items-center justify-center transition-all
-                ${designSettings.themeColor === color.value ? 'border-blue-600 scale-110 shadow-md' : 'border-transparent hover:scale-105'}
+                ${designSettings.themeColor === color.value ? 'border-[#DB4B2E] scale-110 shadow-md' : 'border-transparent hover:scale-105'}
               `}
               style={{ backgroundColor: color.value }}
               title={color.name}
@@ -100,7 +102,7 @@ export const DesignForm: React.FC = () => {
       {/* Typography */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Type size={20} className="text-blue-600" />
+          <Type size={20} className="text-[#DB4B2E]" />
           <h3>Typography</h3>
         </div>
         
@@ -112,7 +114,7 @@ export const DesignForm: React.FC = () => {
               className={`
                 px-4 py-3 rounded-lg border-2 text-left transition-all
                 ${designSettings.fontFamily === font.id 
-                  ? 'border-blue-600 bg-blue-50 text-blue-700' 
+                  ? 'border-[#DB4B2E] bg-[#FBEAE4] text-[#B83A21]' 
                   : 'border-gray-200 hover:border-gray-300 text-gray-700'}
                 ${font.id === 'times' ? 'font-serif' : font.style}
               `}
@@ -128,7 +130,7 @@ export const DesignForm: React.FC = () => {
       {/* Text Alignment */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Layout size={20} className="text-blue-600" />
+          <Layout size={20} className="text-[#DB4B2E]" />
           <h3>Alignment</h3>
         </div>
         <div className="flex bg-gray-100 p-1 rounded-lg">
@@ -137,7 +139,7 @@ export const DesignForm: React.FC = () => {
               key={align.id}
               onClick={() => updateDesign({ textAlignment: align.id })}
               className={`flex-1 p-2 rounded-md flex justify-center transition-all ${
-                designSettings.textAlignment === align.id ? 'bg-white shadow text-blue-600' : 'text-gray-500 hover:text-gray-700'
+                designSettings.textAlignment === align.id ? 'bg-white shadow text-[#DB4B2E]' : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <align.icon size={20} />
@@ -149,7 +151,7 @@ export const DesignForm: React.FC = () => {
       {/* Font Sizes */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Scaling size={20} className="text-blue-600" />
+          <Scaling size={20} className="text-[#DB4B2E]" />
           <h3>Font Sizes</h3>
         </div>
         
@@ -163,7 +165,7 @@ export const DesignForm: React.FC = () => {
               step="0.1"
               value={designSettings.fontSizes?.header || 2.25}
               onChange={(e) => updateFontSize('header', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
             />
           </div>
           <div>
@@ -175,7 +177,7 @@ export const DesignForm: React.FC = () => {
               step="0.1"
               value={designSettings.fontSizes?.sectionTitle || 1.5}
               onChange={(e) => updateFontSize('sectionTitle', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
             />
           </div>
           <div>
@@ -187,7 +189,7 @@ export const DesignForm: React.FC = () => {
               step="0.05"
               value={designSettings.fontSizes?.body || 1}
               onChange={(e) => updateFontSize('body', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
             />
           </div>
         </div>
@@ -196,7 +198,7 @@ export const DesignForm: React.FC = () => {
       {/* Spacing */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <MoveVertical size={20} className="text-blue-600" />
+          <MoveVertical size={20} className="text-[#DB4B2E]" />
           <h3>Spacing</h3>
         </div>
         
@@ -210,7 +212,7 @@ export const DesignForm: React.FC = () => {
               step="0.1"
               value={designSettings.spacing?.lineHeight || 1.6}
               onChange={(e) => updateSpacing('lineHeight', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
             />
           </div>
           <div>
@@ -222,7 +224,7 @@ export const DesignForm: React.FC = () => {
               step="0.25"
               value={designSettings.spacing?.sectionPadding || 2}
               onChange={(e) => updateSpacing('sectionPadding', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
             />
           </div>
           <div>
@@ -234,7 +236,7 @@ export const DesignForm: React.FC = () => {
               step="0.25"
               value={designSettings.spacing?.itemGap || 1}
               onChange={(e) => updateSpacing('itemGap', parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
             />
           </div>
         </div>
@@ -243,7 +245,7 @@ export const DesignForm: React.FC = () => {
       {/* Global Scale (Legacy support) */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Scaling size={20} className="text-blue-600" />
+          <Scaling size={20} className="text-[#DB4B2E]" />
           <h3>Global Scale</h3>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
@@ -254,7 +256,7 @@ export const DesignForm: React.FC = () => {
             step="0.05"
             value={designSettings.scale}
             onChange={(e) => updateDesign({ scale: parseFloat(e.target.value) })}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-[#DB4B2E]"
           />
           <div className="mt-2 text-center text-sm font-medium text-gray-700">
             {Math.round(designSettings.scale * 100)}%

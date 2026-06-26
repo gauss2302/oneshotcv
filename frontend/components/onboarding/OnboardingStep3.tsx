@@ -15,7 +15,7 @@ export function OnboardingStep3({
   return (
     <div className="flex flex-col items-center text-center space-y-6">
       {/* Large Icon */}
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#457b9d] to-[#a8dadc] flex items-center justify-center shadow-lg shadow-[#457b9d]/25">
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#DB4B2E] to-[#E0D9CD] flex items-center justify-center shadow-lg shadow-[#DB4B2E]/25">
         <Download size={48} className="text-white" />
       </div>
 
@@ -42,7 +42,7 @@ export function OnboardingStep3({
             </div>
           </div>
         </div>
-        <button className="w-full bg-[#457b9d] text-white py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] flex items-center justify-center gap-2">
+        <button className="w-full bg-[#DB4B2E] text-white py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] flex items-center justify-center gap-2">
           <Download size={20} />
           <span>Download PDF</span>
         </button>
@@ -58,7 +58,7 @@ export function OnboardingStep3({
         </button>
         <button
           onClick={onComplete}
-          className="bg-[#457b9d] hover:bg-[#3d6d8a] text-white px-8 py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 active:scale-[0.99]"
+          className="bg-[#DB4B2E] hover:bg-[#C03E22] text-white px-8 py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 active:scale-[0.99]"
         >
           Get Started
         </button>

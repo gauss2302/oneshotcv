@@ -9,7 +9,7 @@ const colors = {
   mainBg: '#ffffff',
   textMain: '#334155', // slate-700
   textSec: '#64748b', // slate-500
-  accent: '#3b82f6', // blue-500
+  accent: '#DB4B2E', // vermillion
 };
 
 export const getModernTemplateBlocks: TemplateGenerator = (data: CVState, settings: CVDesignSettings) => {

@@ -60,7 +60,7 @@ export function SubscriptionModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="relative bg-[#457b9d] p-6 rounded-t-2xl">
+        <div className="relative bg-[#DB4B2E] p-6 rounded-t-2xl">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
@@ -134,7 +134,7 @@ export function SubscriptionModal({
             <button
               onClick={handleSubscribe}
               disabled={isCreatingCheckout}
-              className="w-full bg-[#457b9d] hover:bg-[#3d6d8a] text-white font-semibold py-3 px-6 rounded-[16px] shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.99]"
+              className="w-full bg-[#DB4B2E] hover:bg-[#C03E22] text-white font-semibold py-3 px-6 rounded-[16px] shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed active:scale-[0.99]"
             >
               {isCreatingCheckout ? "Processing..." : "Subscribe Now"}
             </button>

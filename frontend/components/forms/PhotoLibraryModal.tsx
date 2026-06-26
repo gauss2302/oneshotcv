@@ -64,7 +64,7 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
         <div className="flex-1 overflow-y-auto p-6">
           {loading && (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="animate-spin text-blue-600" size={32} />
+              <Loader2 className="animate-spin text-[#DB4B2E]" size={32} />
             </div>
           )}
 
@@ -73,7 +73,7 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
               <p className="text-red-600">{error}</p>
               <button
                 onClick={loadPhotos}
-                className="mt-4 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="mt-4 px-4 py-2 text-sm bg-[#DB4B2E] text-white rounded-lg hover:bg-[#C03E22]"
               >
                 Try Again
               </button>
@@ -96,7 +96,7 @@ export const PhotoLibraryModal: React.FC<PhotoLibraryModalProps> = ({
                 <button
                   key={photo.id}
                   onClick={() => onSelect(photo)}
-                  className="group relative aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-blue-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="group relative aspect-square rounded-lg overflow-hidden border-2 border-transparent hover:border-[#DB4B2E] transition-all focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45"
                 >
                   <img
                     src={photo.originalUrl}

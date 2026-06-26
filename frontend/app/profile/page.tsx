@@ -168,7 +168,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-center h-[calc(100vh-80px)]">
           <div className="relative">
             <div className="w-16 h-16 border-4 border-gray-200 rounded-full"></div>
-            <div className="w-16 h-16 border-4 border-[#457b9d] border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+            <div className="w-16 h-16 border-4 border-[#DB4B2E] border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
           </div>
         </div>
       </div>
@@ -183,7 +183,7 @@ export default function ProfilePage() {
         {/* Profile Header Card */}
         <div className="relative bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
           {/* Animated Background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#457b9d] via-[#a8dadc] to-[#a8dadc] opacity-90">
+          <div className="absolute inset-0 bg-gradient-to-r from-[#DB4B2E] via-[#E0D9CD] to-[#E0D9CD] opacity-90">
             <div className="absolute inset-0" />
           </div>
 
@@ -245,13 +245,13 @@ export default function ProfilePage() {
               label: "Resumes",
               value: resumes.length,
               icon: FileText,
-              color: "from-[#457b9d] to-[#a8dadc]",
+              color: "from-[#DB4B2E] to-[#E0D9CD]",
             },
             {
               label: "Photos",
               value: photos.length,
               icon: ImageIcon,
-              color: "from-[#a8dadc] to-[#3b82f6]",
+              color: "from-[#E0D9CD] to-[#DB4B2E]",
             },
             {
               label: "Templates",
@@ -288,7 +288,7 @@ export default function ProfilePage() {
           <section className="bg-white rounded-3xl shadow-xl overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#457b9d] to-[#a8dadc] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#DB4B2E] to-[#E0D9CD] flex items-center justify-center">
                   <FileText size={20} className="text-white" />
                 </div>
                 <div>
@@ -302,7 +302,7 @@ export default function ProfilePage() {
               </div>
               <Link
                 href="/dashboard"
-                className="text-sm font-medium text-[#457b9d] hover:text-[#a8dadc] transition-colors"
+                className="text-sm font-medium text-[#DB4B2E] hover:text-[#E0D9CD] transition-colors"
               >
                 View All →
               </Link>
@@ -311,7 +311,7 @@ export default function ProfilePage() {
             <div className="p-4 max-h-[400px] overflow-y-auto">
               {loadingResumes ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#457b9d]" />
+                  <Loader2 className="w-8 h-8 animate-spin text-[#DB4B2E]" />
                 </div>
               ) : resumes.length === 0 ? (
                 <div className="text-center py-12">
@@ -321,7 +321,7 @@ export default function ProfilePage() {
                   <p className="text-gray-500 mb-4">No resumes yet</p>
                   <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#457b9d] to-[#a8dadc] text-white rounded-xl font-medium hover:shadow-lg transition-all"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#DB4B2E] to-[#E0D9CD] text-white rounded-xl font-medium hover:shadow-lg transition-all"
                   >
                     Create First Resume
                   </Link>
@@ -332,17 +332,17 @@ export default function ProfilePage() {
                     <Link
                       key={resume.id}
                       href={`/editor?resumeId=${resume.id}`}
-                      className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-[#457b9d]/5 hover:to-[#a8dadc]/5 transition-all duration-300 border border-transparent hover:border-[#457b9d]/20"
+                      className="group flex items-center gap-4 p-4 rounded-2xl hover:bg-gradient-to-r hover:from-[#DB4B2E]/5 hover:to-[#E0D9CD]/5 transition-all duration-300 border border-transparent hover:border-[#DB4B2E]/20"
                       style={{ animationDelay: `${index * 50}ms` }}
                     >
-                      <div className="w-12 h-14 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center group-hover:from-[#457b9d]/20 group-hover:to-[#a8dadc]/20 transition-all duration-300">
+                      <div className="w-12 h-14 rounded-lg bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center group-hover:from-[#DB4B2E]/20 group-hover:to-[#E0D9CD]/20 transition-all duration-300">
                         <FileText
                           size={24}
-                          className="text-gray-400 group-hover:text-[#457b9d] transition-colors"
+                          className="text-gray-400 group-hover:text-[#DB4B2E] transition-colors"
                         />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-gray-900 truncate group-hover:text-[#457b9d] transition-colors">
+                        <h3 className="font-semibold text-gray-900 truncate group-hover:text-[#DB4B2E] transition-colors">
                           {resume.title || "Untitled Resume"}
                         </h3>
                         <p className="text-sm text-gray-500 flex items-center gap-1">
@@ -352,7 +352,7 @@ export default function ProfilePage() {
                       </div>
                       <ExternalLink
                         size={18}
-                        className="text-gray-400 group-hover:text-[#457b9d] transition-colors opacity-0 group-hover:opacity-100"
+                        className="text-gray-400 group-hover:text-[#DB4B2E] transition-colors opacity-0 group-hover:opacity-100"
                       />
                     </Link>
                   ))}
@@ -365,7 +365,7 @@ export default function ProfilePage() {
           <section className="bg-white rounded-3xl shadow-xl overflow-hidden">
             <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#a8dadc] to-[#3b82f6] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#E0D9CD] to-[#DB4B2E] flex items-center justify-center">
                   <ImageIcon size={20} className="text-white" />
                 </div>
                 <div>
@@ -382,7 +382,7 @@ export default function ProfilePage() {
             <div className="p-6">
               {loadingPhotos ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#a8dadc]" />
+                  <Loader2 className="w-8 h-8 animate-spin text-[#E0D9CD]" />
                 </div>
               ) : photos.length === 0 ? (
                 <div className="text-center py-12">
@@ -485,7 +485,7 @@ export default function ProfilePage() {
                         }}
                         className={`relative flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden transition-all duration-300 ${
                           currentSlide === index
-                            ? "ring-2 ring-[#a8dadc] ring-offset-2 scale-105"
+                            ? "ring-2 ring-[#E0D9CD] ring-offset-2 scale-105"
                             : "opacity-60 hover:opacity-100"
                         }`}
                       >
@@ -509,7 +509,7 @@ export default function ProfilePage() {
                         }}
                         className={`h-2 rounded-full transition-all duration-300 ${
                           currentSlide === index
-                            ? "w-8 bg-gradient-to-r from-[#a8dadc] to-[#3b82f6]"
+                            ? "w-8 bg-gradient-to-r from-[#E0D9CD] to-[#DB4B2E]"
                             : "w-2 bg-gray-300 hover:bg-gray-400"
                         }`}
                       />
@@ -531,7 +531,7 @@ export default function ProfilePage() {
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#a8dadc] via-[#457b9d] to-[#a8dadc] rounded-full transition-all duration-500 ease-out"
+              className="h-full bg-gradient-to-r from-[#E0D9CD] via-[#DB4B2E] to-[#E0D9CD] rounded-full transition-all duration-500 ease-out"
               style={{ width: `${(photos.length / 5) * 100}%` }}
             />
           </div>

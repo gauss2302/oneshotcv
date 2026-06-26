@@ -486,7 +486,7 @@ const buildSidebar: SpecBuilder = (input) => {
 
 const buildDesigner: SpecBuilder = (input) => {
   const accent =
-    (input.designSettings.themeColor === "#3b82f6"
+    (input.designSettings.themeColor === "#DB4B2E"
       ? "#E0B656"
       : input.designSettings.themeColor) ?? "#E0B656";
   const theme = buildTheme(input.designSettings, { accentColor: accent });

@@ -46,7 +46,7 @@ export const personalInfoSchema = z.object({
   email: z.union([z.literal(""), z.string().email().max(255)]),
   phone: z.string().max(50),
   address: z.string().max(500),
-  summary: z.string().max(2000),
+  summary: z.string().max(5000),
   title: z.string().max(200),
   location: z.string().max(200).optional(),
   photo: photoDataSchema.optional(),
@@ -58,7 +58,7 @@ export const educationItemSchema = z.object({
   degree: z.string().max(200),
   startDate: z.string().max(50),
   endDate: z.string().max(50),
-  description: z.string().max(2000),
+  description: z.string().max(5000),
   current: z.boolean().optional(),
 });
 
@@ -69,7 +69,7 @@ export const experienceItemSchema = z.object({
   startDate: z.string().max(50),
   endDate: z.string().max(50),
   location: z.string().max(200),
-  description: z.string().max(5000),
+  description: z.string().max(10000),
   current: z.boolean().optional(),
   isCurrent: z.boolean().optional(),
 });

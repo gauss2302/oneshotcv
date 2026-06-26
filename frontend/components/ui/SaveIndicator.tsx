@@ -44,7 +44,7 @@ export const SaveIndicator: React.FC = memo(() => {
 
   if (isSaving) {
     return (
-      <div className="flex items-center gap-2 text-blue-500 text-sm animate-in fade-in duration-200">
+      <div className="flex items-center gap-2 text-[#57514A] text-sm animate-in fade-in duration-200">
         <Loader2 size={16} className="animate-spin" />
         <span className="font-medium">Saving...</span>
       </div>

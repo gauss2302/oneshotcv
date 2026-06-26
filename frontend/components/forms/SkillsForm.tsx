@@ -95,7 +95,7 @@ export const SkillsForm: React.FC = () => {
         <h2 className="text-xl font-semibold text-gray-800">Skills</h2>
         <button
           onClick={addSkill}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#DB4B2E] bg-[#FBEAE4] hover:bg-[#FBDDD3] rounded-md transition-colors"
         >
           <Plus size={16} />
           Add Skill
@@ -120,7 +120,7 @@ export const SkillsForm: React.FC = () => {
                     onChange={(e) =>
                       updateSkill(skill.id, { name: e.target.value })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
                     placeholder="Skill (e.g. React, Python)"
                   />
                 </div>
@@ -133,7 +133,7 @@ export const SkillsForm: React.FC = () => {
                         level: parseInt(e.target.value),
                       })
                     }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
                   >
                     <option value={1}>Beginner</option>
                     <option value={2}>Basic</option>

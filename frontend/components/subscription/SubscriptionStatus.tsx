@@ -72,7 +72,7 @@ export function SubscriptionStatus({ className = "" }: SubscriptionStatusProps) 
             </p>
             <a
               href="/dashboard?subscription=required"
-              className="inline-flex items-center gap-2 text-sm font-medium text-[#457b9d] hover:underline transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-medium text-[#DB4B2E] hover:underline transition-colors"
             >
               View Plans →
             </a>

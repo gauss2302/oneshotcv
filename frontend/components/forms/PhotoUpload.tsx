@@ -246,9 +246,9 @@ export const PhotoUpload: React.FC = () => {
 
       {!personalInfo.photo ? (
         <div className="space-y-3">
-          <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-blue-500 transition-colors bg-gray-50">
+          <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-[#DB4B2E] transition-colors bg-gray-50">
             {uploading ? (
-              <Loader2 className="w-8 h-8 text-blue-600 animate-spin mb-2" />
+              <Loader2 className="w-8 h-8 text-[#DB4B2E] animate-spin mb-2" />
             ) : (
               <Upload className="w-8 h-8 text-gray-400 mb-2" />
             )}
@@ -295,7 +295,7 @@ export const PhotoUpload: React.FC = () => {
           <button
             type="button"
             onClick={handleReCrop}
-            className="absolute -bottom-2 -right-2 p-1.5 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"
+            className="absolute -bottom-2 -right-2 p-1.5 bg-[#FBEAE4]0 text-white rounded-full hover:bg-[#C03E22] transition-colors shadow-lg"
             title="Re-crop photo"
           >
             <Crop size={16} />

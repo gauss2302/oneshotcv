@@ -15,7 +15,7 @@ export function OnboardingStep2({
   return (
     <div className="flex flex-col items-center text-center space-y-6">
       {/* Large Icon */}
-      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#457b9d] to-[#a8dadc] flex items-center justify-center shadow-lg shadow-[#457b9d]/25">
+      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#DB4B2E] to-[#E0D9CD] flex items-center justify-center shadow-lg shadow-[#DB4B2E]/25">
         <Sparkles size={48} className="text-white" />
       </div>
 
@@ -34,11 +34,11 @@ export function OnboardingStep2({
       {/* Visual Example */}
       <div className="w-full max-w-sm bg-gray-50 rounded-xl p-6 border border-gray-200">
         <div className="flex items-start gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-[#457b9d]/10 flex items-center justify-center flex-shrink-0">
-            <Wand2 size={20} className="text-[#457b9d]" />
+          <div className="w-10 h-10 rounded-lg bg-[#DB4B2E]/10 flex items-center justify-center flex-shrink-0">
+            <Wand2 size={20} className="text-[#DB4B2E]" />
           </div>
           <div className="flex-1 text-left">
-            <div className="h-4 bg-[#457b9d]/20 rounded w-full mb-2"></div>
+            <div className="h-4 bg-[#DB4B2E]/20 rounded w-full mb-2"></div>
             <div className="h-3 bg-gray-200 rounded w-3/4 mb-1"></div>
             <div className="h-3 bg-gray-200 rounded w-5/6"></div>
           </div>
@@ -65,7 +65,7 @@ export function OnboardingStep2({
         </button>
         <button
           onClick={onNext}
-          className="bg-[#457b9d] hover:bg-[#3d6d8a] text-white px-8 py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 active:scale-[0.99]"
+          className="bg-[#DB4B2E] hover:bg-[#C03E22] text-white px-8 py-3 rounded-[16px] font-semibold shadow-[var(--shadow-sm)] hover:shadow-md transition-all duration-200 active:scale-[0.99]"
         >
           Next
         </button>

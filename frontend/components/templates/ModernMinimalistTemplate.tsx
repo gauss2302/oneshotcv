@@ -7,7 +7,7 @@ export const getModernMinimalistTemplateBlocks = (data: CVState, settings: CVDes
   const blocks: TemplateBlock[] = [];
   const { personalInfo, education, experience, skills } = data;
   const { 
-    themeColor = '#3b82f6', 
+    themeColor = '#DB4B2E', 
     fontFamily = 'sans', 
     scale = 1,
     textAlignment = 'left',

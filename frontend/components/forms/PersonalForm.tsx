@@ -88,7 +88,7 @@ export const PersonalForm: React.FC = () => {
           </label>
           <input
             {...register("fullName")}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
             placeholder="John Doe"
           />
           {errors.fullName && (
@@ -104,7 +104,7 @@ export const PersonalForm: React.FC = () => {
           </label>
           <input
             {...register("title")}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
             placeholder="Software Engineer"
           />
           {errors.title && (
@@ -119,7 +119,7 @@ export const PersonalForm: React.FC = () => {
           <input
             {...register("email")}
             type="email"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
             placeholder="john@example.com"
           />
           {errors.email && (
@@ -133,7 +133,7 @@ export const PersonalForm: React.FC = () => {
           </label>
           <input
             {...register("phone")}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
             placeholder="+1 234 567 890"
           />
           {errors.phone && (
@@ -147,7 +147,7 @@ export const PersonalForm: React.FC = () => {
           </label>
           <input
             {...register("address")}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
             placeholder="City, Country"
           />
         </div>
@@ -159,7 +159,7 @@ export const PersonalForm: React.FC = () => {
           <textarea
             {...register("summary")}
             rows={4}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all resize-none"
             placeholder="Brief summary of your career and goals..."
           />
         </div>

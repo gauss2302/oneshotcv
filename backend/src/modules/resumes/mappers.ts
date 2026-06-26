@@ -29,7 +29,7 @@ type ResumeRecord = typeof resumes.$inferSelect & {
 const DEFAULT_TITLE = "Untitled Resume";
 
 const DEFAULT_DESIGN_SETTINGS: ResumeContent["designSettings"] = {
-  themeColor: "#3b82f6",
+  themeColor: "#DB4B2E",
   fontFamily: "sans",
   scale: 1,
   textAlignment: "left",

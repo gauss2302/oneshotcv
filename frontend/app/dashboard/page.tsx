@@ -1,32 +1,33 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Plus, ChevronDown, Trash2 } from "lucide-react";
-import ResumeHeader from "@/components/layout/Header";
-import { useCVStore } from "@/store/useCVStore";
+import { Plus, Trash2, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
+import { useCVStore } from "@/store/useCVStore";
 import { createEmptyCVState } from "@/lib/resume/defaultCvState";
 import { authClient } from "@/lib/auth/auth-client";
 import { OnboardingModal } from "@/components/onboarding/OnboardingModal";
-import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus";
 import { SubscriptionModal } from "@/components/subscription/SubscriptionModal";
 import { fetchOnboardingStatus } from "@/lib/api/onboarding";
+import { fetchSubscriptionStatus } from "@/lib/api/subscriptions";
 import { deleteResume, fetchResumeList, saveResume } from "@/lib/api/resumes";
 import { logger } from "@/lib/logger";
+import { TEMPLATE_GALLERY } from "@/lib/dashboard-templates";
+import { bullseyeFontVars } from "./fonts";
+import { BullseyeSidebar } from "@/components/dashboard/bullseye/BullseyeSidebar";
+import { BullseyeTopbar } from "@/components/dashboard/bullseye/BullseyeTopbar";
+import { BullseyeTemplateCard } from "@/components/dashboard/bullseye/BullseyeTemplateCard";
+import { Bullseye } from "@/components/dashboard/bullseye/Bullseye";
 import type { ResumeSummary } from "@contracts/resume";
 
 type ResumeVersion = ResumeSummary;
 
 const templateOptions = [
-  // ATS-friendly (best parser compatibility)
   { id: "ats-pure", label: "ATS Pure (parser-safe)" },
   { id: "ats-chronological", label: "ATS Chronological" },
-  // Industry-focused
   { id: "engineer", label: "Engineer" },
   { id: "timeline", label: "Timeline (Consultant)" },
   { id: "photo-first", label: "Photo First" },
-  // Existing classics
   { id: "classic", label: "Classic" },
   { id: "modern", label: "Modern" },
   { id: "modern-minimalist", label: "Modern Minimalist" },
@@ -45,28 +46,52 @@ const templateOptions = [
   { id: "compact", label: "Compact" },
 ] as const;
 
+const dateFmt = new Intl.DateTimeFormat("en-US", {
+  dateStyle: "medium",
+  timeStyle: "short",
+});
+
+function formatUpdated(iso: string | null): string {
+  if (!iso) return "not yet";
+  try {
+    return dateFmt.format(new Date(iso));
+  } catch {
+    return "—";
+  }
+}
+
+function relativeTime(iso: string | null): string {
+  if (!iso) return "—";
+  const diff = Date.now() - new Date(iso).getTime();
+  const m = Math.round(diff / 60000);
+  if (m < 1) return "now";
+  if (m < 60) return `${m}m`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h`;
+  const d = Math.round(h / 24);
+  if (d < 30) return `${d}d`;
+  const mo = Math.round(d / 30);
+  if (mo < 12) return `${mo}mo`;
+  return `${Math.round(mo / 12)}y`;
+}
+
 export default function Dashboard() {
   const { setTemplate } = useCVStore();
   const router = useRouter();
   const [versions, setVersions] = useState<ResumeVersion[]>([]);
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
-    null
-  );
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [createTemplate, setCreateTemplate] = useState<string>(
-    templateOptions[0].id
-  );
+  const [createTemplate, setCreateTemplate] = useState<string>(templateOptions[0].id);
   const [createTitle, setCreateTitle] = useState("New Resume");
   const [createError, setCreateError] = useState<string | null>(null);
-  const [resumeToDelete, setResumeToDelete] = useState<ResumeVersion | null>(
-    null
-  );
+  const [resumeToDelete, setResumeToDelete] = useState<ResumeVersion | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(true);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const [hasActiveSub, setHasActiveSub] = useState<boolean | null>(null);
   const { data: session, isPending: isSessionPending } = authClient.useSession();
 
   const fetchVersions = useCallback(async (selectedId?: string | null) => {
@@ -89,17 +114,28 @@ export default function Dashboard() {
     const timeoutId = window.setTimeout(() => {
       void fetchVersions();
     }, 0);
-
     return () => window.clearTimeout(timeoutId);
   }, [fetchVersions]);
 
-  // Warm the editor route in the background. The dashboard's primary
-  // destination is /editor — prefetching it on mount means the user's first
-  // click on any template card or saved-resume button feels instant
-  // (no chunk download on the critical path).
+  // Warm the editor route so the first click feels instant.
   useEffect(() => {
     router.prefetch("/editor");
   }, [router]);
+
+  // Subscription status drives the free-plan banner (hidden on error).
+  useEffect(() => {
+    let cancelled = false;
+    fetchSubscriptionStatus()
+      .then((data) => {
+        if (!cancelled) setHasActiveSub(Boolean(data?.hasActiveSubscription));
+      })
+      .catch(() => {
+        if (!cancelled) setHasActiveSub(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Check for subscription query parameter
   useEffect(() => {
@@ -107,11 +143,9 @@ export default function Dashboard() {
       const params = new URLSearchParams(window.location.search);
       if (params.get("subscription") === "required") {
         setShowSubscriptionModal(true);
-        // Clean up URL
         window.history.replaceState({}, "", "/dashboard");
       }
     }, 0);
-
     return () => window.clearTimeout(timeoutId);
   }, []);
 
@@ -123,7 +157,6 @@ export default function Dashboard() {
         return;
       }
 
-      // Check localStorage first (fast)
       const localComplete = localStorage.getItem("onboarding_completed");
       if (localComplete === "true") {
         setShowOnboarding(false);
@@ -131,7 +164,6 @@ export default function Dashboard() {
         return;
       }
 
-      // Check database via API
       try {
         const data = await fetchOnboardingStatus();
         if (data.hasCompletedOnboarding) {
@@ -145,7 +177,6 @@ export default function Dashboard() {
           "Failed to check onboarding status",
           error instanceof Error ? error : undefined
         );
-        // On error, show onboarding (better UX for new users)
         setShowOnboarding(true);
       } finally {
         setIsCheckingOnboarding(false);
@@ -155,13 +186,8 @@ export default function Dashboard() {
     checkOnboardingStatus();
   }, [session, isSessionPending]);
 
-  const handleOnboardingComplete = () => {
-    setShowOnboarding(false);
-  };
-
-  const handleOnboardingSkip = () => {
-    setShowOnboarding(false);
-  };
+  const handleOnboardingComplete = () => setShowOnboarding(false);
+  const handleOnboardingSkip = () => setShowOnboarding(false);
 
   const startCreateFlow = (templateId?: string, name?: string) => {
     setCreateTemplate(templateId ?? templateOptions[0].id);
@@ -196,10 +222,7 @@ export default function Dashboard() {
         setTemplate(templateId);
         const initialState = createEmptyCVState();
         const payload = {
-          content: {
-            ...initialState,
-            selectedTemplate: templateId,
-          },
+          content: { ...initialState, selectedTemplate: templateId },
           title: title || "New Resume",
           createNew: true,
         };
@@ -218,9 +241,7 @@ export default function Dashboard() {
     [fetchVersions, router, setTemplate]
   );
 
-  const requestDeleteVersion = (version: ResumeVersion) => {
-    setResumeToDelete(version);
-  };
+  const requestDeleteVersion = (version: ResumeVersion) => setResumeToDelete(version);
 
   const handleDeleteVersion = async () => {
     if (!resumeToDelete) return;
@@ -241,9 +262,21 @@ export default function Dashboard() {
     }
   };
 
+  const handleNavEditor = () => {
+    const target = selectedVersionId ?? versions[0]?.id;
+    if (target) router.push(`/editor?resumeId=${target}`);
+    else startCreateFlow();
+  };
+
+  const userName = session?.user?.name || "User";
+  const userEmail = session?.user?.email || "";
+  const userImage = session?.user?.image ?? null;
+  const showBanner = hasActiveSub === false;
+
   return (
-    <>
-      {/* Onboarding Modal */}
+    <div
+      className={`${bullseyeFontVars} text-[#1B1815] [font-family:var(--font-hanken)]`}
+    >
       {!isCheckingOnboarding && (
         <OnboardingModal
           isOpen={showOnboarding}
@@ -252,928 +285,273 @@ export default function Dashboard() {
         />
       )}
 
-      <div className="min-h-screen bg-gray-50 text-gray-900 flex">
-        <DashboardSidebar
+      <div className="flex h-screen w-full overflow-hidden bg-[#EDE7DC]">
+        <BullseyeSidebar
+          active="dashboard"
           versions={versions}
           selectedVersionId={selectedVersionId}
           onSelectVersion={handleSelectVersion}
           onCreateVersion={() => startCreateFlow()}
-          onDeleteVersion={requestDeleteVersion}
           isLoading={isLoading}
           isCreating={isCreating}
+          userName={userName}
+          userEmail={userEmail}
+          onUpgrade={() => setShowSubscriptionModal(true)}
+          onNavEditor={handleNavEditor}
         />
 
-        <div className="flex-1 flex flex-col">
-          <ResumeHeader />
-          <main className="pl-14 pr-4 py-10 sm:pl-6 lg:pl-10 lg:pr-10 flex-1 overflow-y-auto">
-            <div className="max-w-5xl mx-auto">
-            {/* Subscription Status */}
-            <div className="mb-6">
-              <SubscriptionStatus />
-            </div>
+        <main className="flex min-w-0 flex-1 flex-col">
+          <BullseyeTopbar
+            viewTitle="Dashboard"
+            userName={userName}
+            userEmail={userEmail}
+            userImage={userImage}
+          />
 
-            <div className="flex justify-between items-end mb-12">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                  Resume Builder
-                </h1>
-                <p className="text-gray-500 text-lg">
-                  Create and manage your CV versions
-                </p>
-              </div>
-              <button
-                onClick={() => startCreateFlow("classic", "New Resume")}
-                disabled={isCreating}
-                className="bg-[#457b9d] hover:bg-[#1565e0] text-white px-6 py-3 rounded-xl font-semibold shadow-md shadow-[#457b9d]/25 hover:shadow-lg hover:shadow-[#457b9d]/30 transition-all duration-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
-              >
-                <Plus size={20} />
-                {isCreating ? "Creating..." : "New Resume"}
-              </button>
-            </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-16 pt-8 sm:px-8 lg:px-[52px] lg:pt-[38px]">
+            <div className="mx-auto max-w-[1120px]">
+              {/* Free-plan banner */}
+              {showBanner && (
+                <div className="mb-7 flex items-center gap-4 rounded-[14px] border border-[#EBD9B8] bg-[linear-gradient(180deg,#FCF6E8,#FBF1DC)] px-[18px] py-[15px]">
+                  <div className="flex h-[34px] w-[34px] flex-none items-center justify-center rounded-[9px] bg-[#F4E2B6]">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <circle cx="9" cy="9" r="7.3" stroke="#B5781F" strokeWidth="1.5" />
+                      <path d="M9 5.2v4.4" stroke="#B5781F" strokeWidth="1.6" strokeLinecap="round" />
+                      <circle cx="9" cy="12.4" r="0.9" fill="#B5781F" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[14.5px] font-semibold text-[#5C4A1E]">
+                      You&apos;re on the free plan
+                    </div>
+                    <div className="mt-px text-[13px] text-[#8a7335]">
+                      Subscribe to unlock PDF downloads and premium layouts.
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowSubscriptionModal(true)}
+                    className="whitespace-nowrap text-[13.5px] font-semibold text-[#B5781F]"
+                  >
+                    View plans&nbsp;→
+                  </button>
+                </div>
+              )}
 
-            <section className="mb-12">
-              <div className="flex items-center justify-between mb-4">
+              {/* Hero */}
+              <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
                 <div>
-                  <h2 className="text-xl font-bold text-gray-800">
-                    My CV Versions
-                  </h2>
-                  <p className="text-gray-500 text-sm">
-                    Quickly switch between saved resumes to tailor them for
-                    different roles.
+                  <div className="text-[11px] tracking-[0.18em] text-[#A39A8C] [font-family:var(--font-spline-mono)]">
+                    WORKSPACE
+                  </div>
+                  <h1 className="mb-2 mt-[10px] text-[34px] font-normal leading-[1.05] tracking-[-0.02em] [font-family:var(--font-spectral)] sm:text-[44px]">
+                    Aim your next role.
+                  </h1>
+                  <p className="m-0 max-w-[520px] text-[15.5px] text-[#6B655C]">
+                    Build, tailor and manage every CV version — then fire your best
+                    shot at the job.
                   </p>
                 </div>
                 <button
+                  type="button"
+                  onClick={() => startCreateFlow()}
+                  disabled={isCreating}
+                  className="inline-flex items-center gap-[9px] self-start whitespace-nowrap rounded-[11px] bg-[#DB4B2E] px-5 py-[13px] text-[14.5px] font-semibold text-white shadow-[0_8px_20px_-8px_rgba(219,75,46,0.6)] transition-colors hover:bg-[#C03E22] disabled:opacity-70"
+                >
+                  <Plus size={18} strokeWidth={2.2} />
+                  {isCreating ? "Creating…" : "New résumé"}
+                </button>
+              </div>
+
+              {/* My CV versions */}
+              <div className="mb-4 mt-10 flex flex-wrap items-baseline gap-x-[14px] gap-y-1">
+                <h2 className="m-0 text-[22px] font-medium [font-family:var(--font-spectral)]">
+                  My CV versions
+                </h2>
+                <span className="text-[13px] text-[#A39A8C]">
+                  Switch and tailor for different roles.
+                </span>
+                <button
+                  type="button"
                   onClick={() => fetchVersions(selectedVersionId)}
-                  className="text-sm text-gray-500 hover:text-[#a8dadc] transition-colors duration-200"
+                  className="ml-auto inline-flex items-center gap-1.5 text-[13px] text-[#8C857C] transition-colors hover:text-[#1B1815]"
                 >
-                  Refresh
+                  <RefreshCw size={13} /> Refresh
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {isLoading
-                  ? Array.from({ length: 2 }).map((_, index) => (
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-[18px]">
+                {isLoading ? (
+                  Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={`sk-${i}`}
+                      className="h-[188px] animate-pulse rounded-[15px] border border-[#E7E1D8] bg-white"
+                    />
+                  ))
+                ) : versions.length === 0 ? (
+                  <div className="col-span-full rounded-[15px] border border-dashed border-[#D8CFC0] bg-[#FBF8F3] px-6 py-10 text-center">
+                    <p className="text-[15px] text-[#6B655C]">
+                      No résumé versions yet.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => startCreateFlow()}
+                      className="mt-3 inline-flex items-center gap-2 rounded-[10px] bg-[#1B1815] px-4 py-2.5 text-[13.5px] font-semibold text-[#FCFAF6] transition-colors hover:bg-[#332e28]"
+                    >
+                      <Plus size={16} /> Create your first
+                    </button>
+                  </div>
+                ) : (
+                  versions.map((v) => {
+                    const active = v.id === selectedVersionId;
+                    return (
                       <div
-                        key={`skeleton-${index}`}
-                        className="bg-white rounded-2xl border border-gray-200 p-6 animate-pulse"
+                        key={v.id}
+                        className="rounded-[15px] border border-[#E7E1D8] bg-white p-[18px_19px] shadow-[0_1px_2px_rgba(27,24,21,0.05),0_14px_32px_-20px_rgba(27,24,21,0.18)] transition-all duration-150 hover:-translate-y-[2px] hover:shadow-[0_14px_30px_-16px_rgba(27,24,21,0.2)]"
                       >
-                        <div className="h-4 bg-gray-200 rounded w-1/2 mb-3" />
-                        <div className="h-3 bg-gray-200 rounded w-1/3" />
-                      </div>
-                    ))
-                  : versions.map((version) => {
-                      const isActive = version.id === selectedVersionId;
-                      return (
-                        <div
-                          key={version.id}
-                          className={`bg-white rounded-2xl border p-6 flex flex-col gap-4 transition-all duration-200 ${
-                            isActive 
-                              ? "border-[#457b9d] shadow-md shadow-[#457b9d]/10" 
-                              : "border-gray-200 hover:border-gray-300 hover:shadow-sm"
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-4">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {version.title}
-                              </h3>
-                              <p className="text-sm text-gray-500">
-                                Updated{" "}
-                                {version.updatedAt
-                                    ? new Date(
-                                        version.updatedAt
-                                      ).toLocaleString()
-                                  : "Not yet"}
-                              </p>
+                        <div className="flex items-start justify-between gap-[10px]">
+                          <div className="min-w-0">
+                            <div className="truncate text-[17.5px] text-[#1B1815] [font-family:var(--font-spectral)]">
+                              {v.title}
                             </div>
-                            <button
-                              onClick={() => requestDeleteVersion(version)}
-                              className="p-2 rounded-full text-gray-400 hover:text-[#a8dadc] hover:bg-[#457b9d]/5 transition"
-                              type="button"
-                            >
-                              <Trash2 size={16} />
-                            </button>
+                            <div className="mt-[3px] text-[12.5px] text-[#A39A8C]">
+                              Updated {formatUpdated(v.updatedAt)}
+                            </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleSelectVersion(version.id)}
-                              className="flex-1 bg-gray-900 text-white py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition"
-                            >
-                              Continue Editing
-                            </button>
-                            <button
-                              onClick={() =>
-                                router.push(`/editor?resumeId=${version.id}`)
-                              }
-                              className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:border-gray-300 transition"
-                            >
-                              Open
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => requestDeleteVersion(v)}
+                            aria-label="Delete résumé"
+                            className="flex-none text-[#C7BDAC] transition-colors hover:text-[#DB4B2E]"
+                          >
+                            <Trash2 size={17} />
+                          </button>
                         </div>
-                      );
-                    })}
-              </div>
-            </section>
 
-            <div className="mb-16">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">
-                    Resume Templates
-                  </h2>
-                  <p className="text-gray-500 text-sm">
-                    Choose a template to get started
-                  </p>
-                </div>
-                <button className="text-[#457b9d] font-medium hover:text-[#a8dadc] hover:underline flex items-center gap-1 transition-colors duration-200">
-                  See All <ChevronDown className="-rotate-90" size={16} />
+                        <div className="my-4 flex items-center gap-[11px] rounded-[11px] bg-[#FAF7F1] p-3">
+                          <Bullseye size={30} gap="#FAF7F1" />
+                          <div className="leading-[1.1]">
+                            <div className="text-[23px] font-medium text-[#1B1815] [font-family:var(--font-spectral)]">
+                              {relativeTime(v.updatedAt)}
+                            </div>
+                            <div className="mt-0.5 text-[9.5px] tracking-[0.1em] text-[#A39A8C] [font-family:var(--font-spline-mono)]">
+                              LAST&nbsp;EDIT
+                            </div>
+                          </div>
+                          {active && (
+                            <span className="ml-auto text-[11.5px] font-semibold text-[#DB4B2E]">
+                              Selected
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex gap-[9px]">
+                          <button
+                            type="button"
+                            onClick={() => handleSelectVersion(v.id)}
+                            className="flex-1 rounded-[9px] bg-[#1B1815] py-2.5 text-[13.5px] font-semibold text-[#FCFAF6] transition-colors hover:bg-[#332e28]"
+                          >
+                            Continue editing
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/editor?resumeId=${v.id}`)}
+                            className="rounded-[9px] border border-[#E0D9CD] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#3D372F] transition-colors hover:border-[#1B1815]"
+                          >
+                            Open
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Templates */}
+              <div
+                id="templates"
+                className="mb-4 mt-11 flex flex-wrap items-baseline gap-x-[14px] gap-y-1 scroll-mt-6"
+              >
+                <h2 className="m-0 text-[22px] font-medium [font-family:var(--font-spectral)]">
+                  Start from a template
+                </h2>
+                <span className="text-[13px] text-[#A39A8C]">
+                  {TEMPLATE_GALLERY.length} layouts — ATS-safe to expressive.
+                </span>
+              </div>
+
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(208px,1fr))] gap-[18px]">
+                <button
+                  type="button"
+                  onClick={() => startCreateFlow()}
+                  className="flex min-h-[300px] flex-col items-center justify-center rounded-[16px] border-[1.5px] border-dashed border-[#C9C0B1] bg-[#FBF8F3] p-6 text-center transition-colors hover:border-[#DB4B2E] hover:bg-[#FDF3EE] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#DB4B2E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#EDE7DC]"
+                >
+                  <Bullseye size={52} gap="#FBF8F3" className="mb-4" />
+                  <div className="text-[18px] text-[#1B1815] [font-family:var(--font-spectral)]">
+                    Blank résumé
+                  </div>
+                  <div className="mt-[5px] max-w-[160px] text-[13px] text-[#A39A8C]">
+                    Start from a clean, structured layout.
+                  </div>
                 </button>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Create Blank Card */}
-                <div
-                  onClick={() => startCreateFlow("classic", "Classic Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 h-[340px] flex flex-col items-center justify-center hover:border-[#457b9d] hover:bg-[#457b9d]/5 transition-all duration-200">
-                    <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-[#457b9d]/10 group-hover:text-[#457b9d] transition-colors duration-200 mb-4">
-                      <Plus size={24} />
-                    </div>
-                    <span className="font-semibold text-gray-600 group-hover:text-[#457b9d] transition-colors duration-200">
-                      Create Blank Resume
-                    </span>
-                  </div>
-                </div>
-
-                {/* Template 1: Classic */}
-                <div
-                  onClick={() => startCreateFlow("classic", "Classic Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      {/* Mockup of a resume */}
-                      <div className="absolute inset-2 bg-white shadow-sm p-2 text-[4px] text-gray-400 overflow-hidden">
-                        <div className="flex gap-1">
-                          <div className="w-1/3 bg-[#a8dadc] h-full"></div>
-                          <div className="w-2/3 p-1">
-                            <div className="w-20 h-2 bg-[#a8dadc] mb-1"></div>
-                            <div className="w-full h-1 bg-gray-200 mb-0.5"></div>
-                            <div className="w-full h-1 bg-gray-200 mb-0.5"></div>
-                            <div className="w-3/4 h-1 bg-gray-200 mb-0.5"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Investment Banking Model
-                      </h3>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 2: Modern */}
-                <div
-                  onClick={() => startCreateFlow("modern", "Modern Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-2 text-[4px] text-gray-400 overflow-hidden">
-                        <div className="text-center mb-2">
-                          <div className="w-20 h-2 bg-[#8CE4FF] mx-auto mb-1"></div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="h-20 bg-gray-50"></div>
-                          <div className="h-20 bg-gray-50"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Creative Portfolio
-                      </h3>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 3: Creative */}
-                <div
-                    onClick={() =>
-                      startCreateFlow("creative", "Creative Resume")
-                    }
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-2 text-[4px] text-gray-400 overflow-hidden flex flex-col">
-                        <div className="flex items-center gap-2 mb-2">
-                          <div className="w-6 h-6 rounded-full bg-gray-300"></div>
-                          <div className="w-20 h-2 bg-gray-800"></div>
-                        </div>
-                        <div className="flex-1 bg-gray-50"></div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Creative Portfolio
-                      </h3>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 4: Minimalist (ATS) */}
-                <div
-                    onClick={() =>
-                      startCreateFlow("minimalist", "Minimalist Resume")
-                    }
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-4 text-[4px] text-gray-600 overflow-hidden flex flex-col">
-                        <div className="w-full text-center mb-2">
-                          <div className="w-24 h-2 bg-black mx-auto mb-1"></div>
-                          <div className="w-32 h-1 bg-gray-400 mx-auto"></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-3/4 h-1 bg-gray-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Minimalist (ATS)
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                          ATS Friendly
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 5: Professional (ATS) */}
-                <div
-                    onClick={() =>
-                      startCreateFlow("professional", "Professional Resume")
-                    }
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-4 text-[4px] text-gray-600 overflow-hidden flex flex-col">
-                        <div className="w-full border-b border-gray-300 pb-1 mb-2">
-                          <div className="w-24 h-2 bg-[#457b9d] mb-1"></div>
-                          <div className="w-24 h-2 bg-[#457b9d] mb-1"></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="w-16 h-1.5 bg-[#457b9d] mb-1"></div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Professional (ATS)
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                          ATS Friendly
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 6: Modern Minimalist */}
-                <div
-                    onClick={() =>
-                      startCreateFlow(
-                        "modern-minimalist",
-                        "Modern Minimalist Resume"
-                      )
-                    }
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-4 text-[4px] text-gray-600 overflow-hidden flex flex-col">
-                        <div className="w-full mb-2">
-                          <div className="w-24 h-2 bg-[#8CE4FF] mb-1"></div>
-                          <div className="w-20 h-1 bg-gray-400"></div>
-                        </div>
-                        <div className="flex gap-1 mb-2">
-                          <div className="w-2 h-2 bg-gray-200 rounded-full"></div>
-                          <div className="w-2 h-2 bg-gray-200 rounded-full"></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-3/4 h-1 bg-gray-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Modern Minimalist
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-[#8CE4FF]/10 text-[#8CE4FF] rounded-full font-medium">
-                          Clean
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 7: Bold */}
-                <div
-                  onClick={() => startCreateFlow("bold", "Bold Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm overflow-hidden flex flex-col">
-                        <div className="w-full h-24 bg-gradient-to-r from-[#457b9d] to-[#a8dadc] p-4 flex flex-col justify-center items-center mb-2">
-                          <div className="w-32 h-3 bg-white mb-1"></div>
-                          <div className="w-20 h-1 bg-white opacity-70"></div>
-                        </div>
-                        <div className="p-4 space-y-2">
-                          <div className="flex justify-center gap-1 mb-2">
-                            <div className="w-8 h-2 rounded-full border border-[#457b9d]"></div>
-                            <div className="w-8 h-2 rounded-full border border-[#457b9d]"></div>
-                          </div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Bold Creative
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-[#a8dadc]/10 text-[#a8dadc] rounded-full font-medium">
-                          Impactful
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 8: Sidebar */}
-                <div
-                  onClick={() => startCreateFlow("sidebar", "Sidebar Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm overflow-hidden flex">
-                        {/* Sidebar */}
-                        <div className="w-1/3 h-full bg-[#1e293b] p-2 flex flex-col">
-                          <div className="w-8 h-8 rounded-full bg-white/20 mb-2"></div>
-                          <div className="w-full h-1 bg-white/40 mb-1"></div>
-                          <div className="w-2/3 h-1 bg-white/40 mb-4"></div>
-                          <div className="w-full h-1 bg-white/20 mb-1"></div>
-                          <div className="w-full h-1 bg-white/20 mb-1"></div>
-                        </div>
-                        {/* Main Content */}
-                        <div className="w-2/3 p-2 space-y-2">
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-full h-1 bg-gray-300"></div>
-                          <div className="w-3/4 h-1 bg-gray-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Sidebar Modern
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                          Professional
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 9: Designer */}
-                <div
-                    onClick={() =>
-                      startCreateFlow("designer", "Designer Resume")
-                    }
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm overflow-hidden flex">
-                        {/* Sidebar */}
-                        <div className="w-1/3 h-full bg-[#F9F5F0] p-2 flex flex-col">
-                          <div className="w-8 h-8 rounded-full bg-gray-300 mb-2 border-2 border-white"></div>
-                          <div className="w-full h-1 bg-gray-400 mb-1"></div>
-                          <div className="w-2/3 h-1 bg-gray-400 mb-4"></div>
-                          <div className="w-full h-1 bg-gray-300 mb-1"></div>
-                          <div className="w-full h-1 bg-gray-300 mb-1"></div>
-                        </div>
-                        {/* Main Content */}
-                        <div className="w-2/3 flex flex-col">
-                          {/* Header */}
-                          <div className="h-12 bg-[#E0B656] w-full mb-2 flex flex-col justify-center items-end px-2">
-                            <div className="w-16 h-2 bg-white mb-1"></div>
-                            <div className="w-10 h-1 bg-white/80"></div>
-                          </div>
-                          <div className="p-2 space-y-2">
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-3/4 h-1 bg-gray-300"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Designer Profile
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full font-medium">
-                          Creative
-                        </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Template 10: Tech */}
-                  <div
-                    onClick={() => startCreateFlow("tech", "Tech Resume")}
-                    className="group cursor-pointer"
-                  >
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                      <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                        <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
-                          <div className="flex items-start gap-2 mb-2">
-                            <div className="w-6 h-6 rounded bg-[#3b82f6] border-2 border-[#3b82f6]"></div>
-                            <div>
-                              <div className="w-20 h-2 bg-[#3b82f6] mb-1"></div>
-                              <div className="w-16 h-1 bg-gray-400 mb-2"></div>
-                              <div className="flex gap-1 mb-2">
-                                <div className="w-3 h-3 rounded bg-gray-200"></div>
-                                <div className="w-3 h-3 rounded bg-gray-200"></div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="border-l-2 border-gray-200 pl-2 space-y-1">
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-3/4 h-1 bg-gray-300"></div>
-                            <div className="w-full h-1 bg-gray-300"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">
-                          Tech Professional
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                            Developer
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Template 11: Academic */}
-                  <div
-                    onClick={() =>
-                      startCreateFlow("academic", "Academic Resume")
-                    }
-                    className="group cursor-pointer"
-                  >
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                      <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                        <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
-                          <div className="text-center mb-2">
-                            <div className="w-4 h-4 mx-auto mb-1 text-[#8b5cf6]">
-                              🎓
-                            </div>
-                            <div className="w-24 h-2 bg-[#8b5cf6] mx-auto mb-1"></div>
-                            <div className="w-20 h-1 bg-gray-400 mx-auto mb-2"></div>
-                            <div className="w-full h-0.5 bg-gray-300 mb-2"></div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-3/4 h-1 bg-gray-300"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">
-                          Academic CV
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">
-                            Research
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Template 12: Corporate */}
-                  <div
-                    onClick={() =>
-                      startCreateFlow("corporate", "Corporate Resume")
-                    }
-                    className="group cursor-pointer"
-                  >
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                      <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                        <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
-                          <div className="border-b-4 border-[#1e40af] pb-2 mb-2">
-                            <div className="flex justify-between items-start">
-                              <div>
-                                <div className="w-24 h-2 bg-[#1e40af] mb-1"></div>
-                                <div className="w-20 h-1 bg-gray-400"></div>
-                              </div>
-                              <div className="w-5 h-5 rounded bg-gray-300 border"></div>
-                            </div>
-                            <div className="flex gap-2 mt-2">
-                              <div className="w-3 h-3 rounded bg-gray-200"></div>
-                              <div className="w-3 h-3 rounded bg-gray-200"></div>
-                              <div className="w-3 h-3 rounded bg-gray-200"></div>
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-[#1e40af]"></div>
-                              <div className="w-full h-1 bg-gray-300"></div>
-                            </div>
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-3/4 h-1 bg-gray-300"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">
-                          Corporate Formal
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full font-medium">
-                            Executive
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Template 13: Startup */}
-                  <div
-                    onClick={() => startCreateFlow("startup", "Startup Resume")}
-                    className="group cursor-pointer"
-                  >
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                      <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                        <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
-                          <div className="rounded-lg p-2 mb-2 bg-[#fef3c7]">
-                            <div className="flex items-start gap-2">
-                              <div className="w-5 h-5 rounded-lg bg-[#f59e0b]"></div>
-                              <div>
-                                <div className="w-20 h-2 bg-[#f59e0b] mb-1"></div>
-                                <div className="w-16 h-1 bg-gray-400 mb-2"></div>
-                                <div className="flex gap-1">
-                                  <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div>
-                                  <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div>
-                                  <div className="w-2 h-2 rounded-full bg-[#f59e0b]"></div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="border-l-4 border-[#f59e0b] pl-2 space-y-1">
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-full h-1 bg-gray-300"></div>
-                            <div className="w-3/4 h-1 bg-gray-300"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">
-                          Startup Culture
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-medium">
-                            Dynamic
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Template 14: Compact */}
-                  <div
-                    onClick={() => startCreateFlow("compact", "Compact Resume")}
-                    className="group cursor-pointer"
-                  >
-                    <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                      <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                        <div className="absolute inset-2 bg-white shadow-sm p-2 text-[3px] text-gray-600 overflow-hidden">
-                          <div className="border-b-2 border-gray-300 pb-1 mb-1">
-                            <div className="flex justify-between items-center">
-                              <div className="w-16 h-1.5 bg-gray-800"></div>
-                              <div className="w-4 h-4 rounded bg-gray-300"></div>
-                            </div>
-                            <div className="w-12 h-0.5 bg-gray-400 mt-0.5"></div>
-                          </div>
-                          <div className="space-y-0.5">
-                            <div className="w-full h-0.5 bg-gray-300"></div>
-                            <div className="w-full h-0.5 bg-gray-300"></div>
-                            <div className="w-3/4 h-0.5 bg-gray-300"></div>
-                            <div className="w-full h-0.5 bg-gray-300"></div>
-                            <div className="w-5/6 h-0.5 bg-gray-300"></div>
-                          </div>
-                          <div className="mt-1 flex flex-wrap gap-0.5">
-                            <div className="w-4 h-2 bg-gray-200 rounded"></div>
-                            <div className="w-4 h-2 bg-gray-200 rounded"></div>
-                            <div className="w-4 h-2 bg-gray-200 rounded"></div>
-                            <div className="w-4 h-2 bg-gray-200 rounded"></div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-gray-900 text-sm mb-1">
-                          Compact Dense
-                        </h3>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <span className="px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full font-medium">
-                            Space-Efficient
-                          </span>
-                        </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 15: ATS Pure */}
-                <div
-                  onClick={() => startCreateFlow("ats-pure", "ATS Pure Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-700 overflow-hidden">
-                        <div className="border-b border-black pb-1 mb-2">
-                          <div className="w-32 h-2 bg-black mb-1"></div>
-                          <div className="w-20 h-1 bg-gray-700"></div>
-                        </div>
-                        <div className="space-y-1 mb-2">
-                          <div className="w-16 h-1 bg-black"></div>
-                          <div className="w-full h-0.5 bg-gray-400"></div>
-                          <div className="w-full h-0.5 bg-gray-400"></div>
-                          <div className="w-3/4 h-0.5 bg-gray-400"></div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="w-16 h-1 bg-black"></div>
-                          <div className="w-full h-0.5 bg-gray-400"></div>
-                          <div className="w-5/6 h-0.5 bg-gray-400"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        ATS Pure
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                          ATS Friendly
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 16: ATS Chronological */}
-                <div
-                  onClick={() =>
-                    startCreateFlow("ats-chronological", "ATS Chronological Resume")
-                  }
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
-                        <div className="mb-2">
-                          <div className="w-24 h-2 bg-gray-900 mb-1"></div>
-                          <div className="w-20 h-1 bg-[#457b9d]"></div>
-                        </div>
-                        <div className="border-b-2 border-[#457b9d] mb-1.5 pb-0.5">
-                          <div className="w-12 h-1 bg-[#457b9d]"></div>
-                        </div>
-                        <div className="flex gap-2 mb-1">
-                          <div className="w-1/4 space-y-0.5">
-                            <div className="w-full h-0.5 bg-gray-400"></div>
-                          </div>
-                          <div className="flex-1 border-l border-gray-200 pl-1 space-y-0.5">
-                            <div className="w-3/4 h-0.5 bg-gray-700"></div>
-                            <div className="w-full h-0.5 bg-gray-300"></div>
-                            <div className="w-5/6 h-0.5 bg-gray-300"></div>
-                          </div>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="w-1/4 space-y-0.5">
-                            <div className="w-full h-0.5 bg-gray-400"></div>
-                          </div>
-                          <div className="flex-1 border-l border-gray-200 pl-1 space-y-0.5">
-                            <div className="w-3/4 h-0.5 bg-gray-700"></div>
-                            <div className="w-full h-0.5 bg-gray-300"></div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        ATS Chronological
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">
-                          ATS Friendly
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 17: Engineer */}
-                <div
-                  onClick={() => startCreateFlow("engineer", "Engineer Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-700 overflow-hidden">
-                        <div className="border-b-2 border-[#0ea5e9] pb-1 mb-2 flex justify-between items-end">
-                          <div>
-                            <div className="w-20 h-2 bg-gray-900 mb-1"></div>
-                            <div className="w-14 h-1 bg-[#0ea5e9]"></div>
-                          </div>
-                          <div className="w-3 h-3 rounded bg-[#0ea5e9]"></div>
-                        </div>
-                        <div className="grid grid-cols-3 gap-0.5 mb-2">
-                          {Array.from({ length: 9 }).map((_, i) => (
-                            <div
-                              key={i}
-                              className="h-1.5 bg-[#0ea5e9]/15 border border-[#0ea5e9] rounded-sm"
-                            ></div>
-                          ))}
-                        </div>
-                        <div className="border-l-2 border-[#0ea5e9] pl-1 space-y-0.5">
-                          <div className="w-full h-0.5 bg-gray-400"></div>
-                          <div className="w-3/4 h-0.5 bg-gray-300"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Engineer
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-cyan-100 text-cyan-700 rounded-full font-medium">
-                          Tech Stack First
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 18: Timeline */}
-                <div
-                  onClick={() => startCreateFlow("timeline", "Timeline Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden">
-                        <div className="mb-2">
-                          <div className="w-28 h-2 bg-gray-900 mb-1"></div>
-                          <div className="w-16 h-1 bg-[#10b981]"></div>
-                        </div>
-                        <div className="space-y-1.5 pl-2 border-l-2 border-[#10b981]/30">
-                          {[0, 1, 2].map((i) => (
-                            <div key={i} className="relative">
-                              <div className="absolute -left-[7px] top-0.5 w-1.5 h-1.5 rounded-full bg-[#10b981] border border-white"></div>
-                              <div className="w-12 h-0.5 bg-[#10b981] mb-0.5"></div>
-                              <div className="w-full h-0.5 bg-gray-700 mb-0.5"></div>
-                              <div className="w-3/4 h-0.5 bg-gray-300"></div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Timeline
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded-full font-medium">
-                          Consultant Style
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Template 19: Photo First */}
-                <div
-                  onClick={() => startCreateFlow("photo-first", "Photo First Resume")}
-                  className="group cursor-pointer"
-                >
-                  <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200 h-[340px] relative transition-all duration-200 hover:shadow-md hover:border-gray-300">
-                    <div className="h-[260px] bg-gray-100 overflow-hidden relative">
-                      <div className="absolute inset-2 bg-white shadow-sm p-3 text-[4px] text-gray-600 overflow-hidden flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-full bg-[#f43f5e]/15 border-2 border-[#f43f5e] mb-1"></div>
-                        <div className="w-20 h-2 bg-gray-900 mb-0.5"></div>
-                        <div className="w-12 h-1 bg-[#f43f5e] mb-2"></div>
-                        <div className="space-y-0.5 w-full text-center">
-                          <div className="w-3/4 h-0.5 bg-gray-300 mx-auto"></div>
-                          <div className="w-full h-0.5 bg-gray-300"></div>
-                          <div className="w-5/6 h-0.5 bg-gray-300 mx-auto"></div>
-                        </div>
-                        <div className="mt-2 flex flex-wrap justify-center gap-0.5">
-                          <div className="w-5 h-1.5 rounded-full border border-[#f43f5e]"></div>
-                          <div className="w-5 h-1.5 rounded-full border border-[#f43f5e]"></div>
-                          <div className="w-5 h-1.5 rounded-full border border-[#f43f5e]"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
-                        Photo First
-                      </h3>
-                      <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-full font-medium">
-                          Personal Brand
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {TEMPLATE_GALLERY.map((template) => (
+                  <BullseyeTemplateCard
+                    key={template.id}
+                    template={template}
+                    onSelect={(id, title) => startCreateFlow(id, title)}
+                  />
+                ))}
               </div>
             </div>
-            </div>
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
-      {/* Subscription Modal */}
+
       <SubscriptionModal
         isOpen={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}
         trigger="manual"
       />
 
+      {/* Create modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 border border-gray-200">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(27,24,21,0.45)] px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md space-y-5 rounded-[16px] border border-[#E7E1D8] bg-[#FCFAF6] p-6 shadow-[0_30px_70px_-20px_rgba(27,24,21,0.45)]">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">
-                Create New CV
+              <h3 className="text-[22px] [font-family:var(--font-spectral)]">
+                Create new résumé
               </h3>
-              <p className="text-sm text-gray-500">
-                Choose a template and give your resume a name.
+              <p className="text-[13.5px] text-[#6B655C]">
+                Choose a template and give it a name.
               </p>
             </div>
 
             <div className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Resume Name
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8C857C]">
+                  Name
                 </label>
                 <input
                   type="text"
                   value={createTitle}
                   onChange={(e) => setCreateTitle(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#457b9d] focus:ring-offset-2 transition-all duration-200"
-                  placeholder="e.g. Product Manager CV"
+                  className="mt-1.5 w-full rounded-[9px] border border-[#E0D9CD] bg-white px-3 py-2.5 text-[14px] text-[#1B1815] outline-none focus:border-[#DB4B2E]"
+                  placeholder="e.g. Senior PM — Fintech"
                 />
                 {createError && (
-                  <p className="text-sm text-red-500 mt-1">{createError}</p>
+                  <p className="mt-1 text-[13px] text-[#B83A21]">{createError}</p>
                 )}
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">
+                <label className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#8C857C]">
                   Template
                 </label>
                 <select
                   value={createTemplate}
                   onChange={(e) => setCreateTemplate(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#457b9d] focus:ring-offset-2 transition-all duration-200"
+                  className="mt-1.5 w-full rounded-[9px] border border-[#E0D9CD] bg-white px-3 py-2.5 text-[14px] text-[#1B1815] outline-none focus:border-[#DB4B2E]"
                 >
                   {templateOptions.map((option) => (
                     <option key={option.id} value={option.id}>
@@ -1188,14 +566,14 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={handleCancelCreate}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all duration-200 active:scale-95"
+                className="rounded-[9px] border border-[#E0D9CD] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#3D372F] transition-colors hover:border-[#1B1815]"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirmCreate}
-                className="px-4 py-2 rounded-lg bg-gradient-to-r from-[#457b9d] to-[#a8dadc] text-white font-semibold shadow-md shadow-[#457b9d]/25 hover:shadow-lg hover:shadow-[#457b9d]/30 transition-all duration-200 active:scale-95"
+                className="rounded-[9px] bg-[#DB4B2E] px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#C03E22]"
               >
                 Create
               </button>
@@ -1204,17 +582,20 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Delete modal */}
       {resumeToDelete && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4 backdrop-blur-sm">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 space-y-5 border border-gray-200">
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-[rgba(27,24,21,0.45)] px-4 backdrop-blur-sm">
+          <div className="w-full max-w-md space-y-5 rounded-[16px] border border-[#E7E1D8] bg-[#FCFAF6] p-6 shadow-[0_30px_70px_-20px_rgba(27,24,21,0.45)]">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">Delete CV</h3>
-              <p className="text-sm text-gray-500">
-                Are you sure you want to delete{" "}
-                <span className="font-semibold text-gray-900">
-                  {resumeToDelete.title || "Untitled Resume"}
+              <h3 className="text-[22px] [font-family:var(--font-spectral)]">
+                Delete résumé
+              </h3>
+              <p className="text-[13.5px] text-[#6B655C]">
+                Delete{" "}
+                <span className="font-semibold text-[#1B1815]">
+                  {resumeToDelete.title || "Untitled Résumé"}
                 </span>
-                ? This action cannot be undone.
+                ? This can&apos;t be undone.
               </p>
             </div>
 
@@ -1222,8 +603,8 @@ export default function Dashboard() {
               <button
                 type="button"
                 onClick={() => setResumeToDelete(null)}
-                className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-all duration-200 active:scale-95 disabled:opacity-50"
                 disabled={isDeleting}
+                className="rounded-[9px] border border-[#E0D9CD] bg-white px-4 py-2.5 text-[13.5px] font-semibold text-[#3D372F] transition-colors hover:border-[#1B1815] disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -1231,14 +612,14 @@ export default function Dashboard() {
                 type="button"
                 onClick={handleDeleteVersion}
                 disabled={isDeleting}
-                className="px-4 py-2 rounded-lg bg-red-500 text-white font-semibold shadow-md hover:bg-red-600 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
+                className="rounded-[9px] bg-[#DB4B2E] px-5 py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#C03E22] disabled:opacity-70"
               >
-                {isDeleting ? "Deleting..." : "Delete"}
+                {isDeleting ? "Deleting…" : "Delete"}
               </button>
             </div>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }

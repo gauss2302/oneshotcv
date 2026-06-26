@@ -173,9 +173,9 @@ export function OnboardingModal({
               key={step}
               className={`h-2 rounded-full transition-all duration-200 ${
                 step === currentStep
-                  ? "w-8 bg-gradient-to-r from-[#457b9d] to-[#a8dadc]"
+                  ? "w-8 bg-gradient-to-r from-[#DB4B2E] to-[#E0D9CD]"
                   : step < currentStep
-                  ? "w-2 bg-[#457b9d]"
+                  ? "w-2 bg-[#DB4B2E]"
                   : "w-2 bg-gray-300"
               }`}
             />

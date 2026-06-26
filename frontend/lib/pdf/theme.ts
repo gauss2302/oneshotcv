@@ -60,7 +60,7 @@ export function buildTheme(
   const lineHeight = designSettings.spacing?.lineHeight ?? 1.45;
 
   return {
-    accentColor: designSettings.themeColor || "#3b82f6",
+    accentColor: designSettings.themeColor || "#DB4B2E",
     textColor: TEXT_COLORS.primary,
     mutedColor: TEXT_COLORS.muted,
     backgroundColor: TEXT_COLORS.white,

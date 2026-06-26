@@ -43,14 +43,14 @@ const TabButton = memo(({
       className={clsx(
         "flex items-center gap-2 px-6 py-4 text-sm font-medium transition-all duration-200 whitespace-nowrap relative",
         isActive
-          ? "text-blue-600 bg-blue-50/50"
+          ? "text-[#DB4B2E] bg-[#FBEAE4]/60"
           : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
       )}
       aria-pressed={isActive}
       aria-label={`${tab.label} tab`}
     >
       {isActive && (
-        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 animate-in slide-in-from-left duration-200" />
+        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#DB4B2E] animate-in slide-in-from-left duration-200" />
       )}
       <Icon size={18} className={clsx("transition-transform duration-200", isActive && "scale-110")} />
       {tab.label}

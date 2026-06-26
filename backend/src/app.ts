@@ -19,7 +19,13 @@ export async function buildBackendApp(options: FastifyServerOptions = {}) {
 
   await app.register(registerCookiePlugin);
   await app.register(registerCorsPlugin);
-  await app.register(fastifyMultipart);
+  await app.register(fastifyMultipart, {
+    // Per-file upload cap. Without an explicit limit, @fastify/multipart falls
+    // back to Fastify's 1 MB bodyLimit, so any photo over 1 MB fails with 413
+    // (Payload Too Large) before reaching the photos service — which enforces
+    // its own 10 MB max (MAX_FILE_SIZE) and returns a friendlier error.
+    limits: { fileSize: 10 * 1024 * 1024 },
+  });
   await app.register(fastifyRawBody, {
     field: "rawBody",
     global: false,

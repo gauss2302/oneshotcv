@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { useResumeSync } from '@/hooks/use-resume-sync';
 import { authClient } from '@/lib/auth/auth-client';
 import { useCVStore } from '@/store/useCVStore';
+import { bullseyeFontVars } from '@/app/dashboard/fonts';
+import { Bullseye } from '@/components/dashboard/bullseye/Bullseye';
 
 // Dynamic imports for code splitting and performance
 const CVEditor = dynamic(() => import('@/components/CVEditor').then(mod => ({ default: mod.CVEditor })), {
@@ -48,7 +50,7 @@ EditorSkeleton.displayName = 'EditorSkeleton';
 const PreviewSkeleton = memo(() => (
   <div className="w-full h-full flex items-center justify-center bg-gray-100">
     <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#457b9d] mx-auto mb-4"></div>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#DB4B2E] mx-auto mb-4"></div>
       <p className="text-gray-600 font-medium">Loading preview...</p>
     </div>
   </div>
@@ -62,21 +64,22 @@ const EditorNavbar = memo(({ session, isSessionPending }: { session: { user?: { 
   }, []);
 
   return (
-    <nav className="border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm backdrop-blur-sm bg-white/95">
+    <nav className="sticky top-0 z-20 flex items-center justify-between border-b border-[#E7E1D8] bg-[rgba(252,250,246,0.85)] px-6 py-3.5 backdrop-blur-[8px]">
       <div className="flex items-center gap-4">
-        <Link 
-          href="/dashboard" 
-          className="text-gray-500 hover:text-gray-700 transition-colors duration-200"
+        <Link
+          href="/dashboard"
+          className="text-[#8C857C] transition-colors duration-200 hover:text-[#1B1815]"
           aria-label="Back to dashboard"
           prefetch={true}
         >
           <ArrowLeft size={20} />
         </Link>
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-[#457b9d] to-[#a8dadc] rounded-lg flex items-center justify-center text-white font-bold text-lg">
-            CV
-          </div>
-          <span className="font-bold text-xl text-gray-800">Builder</span>
+        <span className="text-[14px] text-[#C7BDAC]">/</span>
+        <div className="flex items-center gap-2.5">
+          <Bullseye size={22} gap="#FCFAF6" className="shadow-[0_0_0_1px_#E7E1D8]" />
+          <span className="text-[19px] tracking-[-0.01em] text-[#1B1815] [font-family:var(--font-spectral)]">
+            Editor
+          </span>
         </div>
       </div>
 
@@ -84,31 +87,31 @@ const EditorNavbar = memo(({ session, isSessionPending }: { session: { user?: { 
         {/* Save Indicator with real-time updates */}
         {session?.user && !isSessionPending && (
           <div className="hidden sm:block">
-            <Suspense fallback={<div className="h-5 w-20 bg-gray-100 rounded animate-pulse" />}>
+            <Suspense fallback={<div className="h-5 w-20 animate-pulse rounded bg-[#EFE9E0]" />}>
               <SaveIndicator />
             </Suspense>
           </div>
         )}
-        
-        <Link 
-          href="/dashboard"
-          className="flex items-center gap-2 text-gray-600 hover:text-[#457b9d] font-medium transition-colors duration-200"
+
+        <Link
+          href="/templates"
+          className="flex items-center gap-2 text-[13.5px] font-medium text-[#57514A] transition-colors duration-200 hover:text-[#DB4B2E]"
           aria-label="Change template"
           prefetch={true}
         >
-          <div className="p-1.5 bg-gray-100 rounded-md group-hover:bg-[#457b9d]/10 transition-colors duration-200">
+          <div className="rounded-md bg-[#F1ECE4] p-1.5">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
           </div>
-          <span className="hidden md:inline">Change Template</span>
+          <span className="hidden md:inline">Change template</span>
         </Link>
-        
+
         <button
           onClick={handleDownload}
-          className="flex items-center gap-2 bg-gradient-to-r bg-[#457b9d] hover:bg-[#3d6d8a] text-white px-4 py-2 rounded-md font-medium transition-all duration-200 shadow-sm hover:shadow-md active:scale-95"
+          className="flex items-center gap-2 rounded-[9px] bg-[#DB4B2E] px-4 py-2 text-[13.5px] font-semibold text-white transition-all duration-200 hover:bg-[#C03E22] active:scale-95"
           aria-label="Download PDF"
         >
           <Download size={18} />
-          <span className="hidden sm:inline">Download PDF</span>
+          <span className="hidden sm:inline">Download</span>
         </button>
       </div>
     </nav>
@@ -130,7 +133,7 @@ const RealTimeIndicator = memo(() => {
         isIssue
           ? 'bg-red-600/90 text-white'
           : isSaving
-            ? 'bg-blue-500/90 text-white'
+            ? 'bg-[#1B1815]/90 text-white'
             : 'bg-amber-500/90 text-white'
       }`}>
         <div className={`w-2 h-2 rounded-full ${
@@ -229,17 +232,17 @@ function EditorContent() {
 
   // Memoize background style to prevent re-renders
   const backgroundStyle = useMemo(() => ({
-    background: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+    background: 'radial-gradient(circle, #DDD3C4 1px, transparent 1px)',
     backgroundSize: '24px 24px',
-    backgroundColor: '#f3f4f6'
+    backgroundColor: '#EDE7DC'
   }), []);
 
   // Show loading state while session is being checked
   if (isSessionPending) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#EDE7DC]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#457b9d] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#DB4B2E] mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Verifying session...</p>
         </div>
       </div>
@@ -249,7 +252,7 @@ function EditorContent() {
   // If no session after loading, show message (though middleware should redirect)
   if (!session?.user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#EDE7DC]">
         <div className="text-center max-w-md px-4">
           <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,7 +263,7 @@ function EditorContent() {
           <p className="text-gray-600 mb-6">Please sign in to access the editor.</p>
           <Link
             href="/login"
-            className="inline-flex items-center gap-2 bg-gradient-to-r bg-[#457b9d] hover:bg-[#3d6d8a] text-white px-6 py-3 rounded-md font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+            className="inline-flex items-center gap-2 bg-[#DB4B2E] hover:bg-[#C03E22] text-white px-6 py-3 rounded-[9px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
             prefetch={true}
           >
             Go to Login
@@ -271,8 +274,8 @@ function EditorContent() {
   }
 
   return (
-    <main 
-      className="min-h-screen flex flex-col"
+    <main
+      className={`${bullseyeFontVars} flex min-h-screen flex-col text-[#1B1815] [font-family:var(--font-hanken)]`}
       style={backgroundStyle}
     >
       {/* Navbar */}
@@ -318,9 +321,9 @@ function EditorContent() {
 export default function EditorPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-[#EDE7DC]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#457b9d] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#DB4B2E] mx-auto mb-4"></div>
           <p className="text-gray-600 font-medium">Loading editor...</p>
         </div>
       </div>

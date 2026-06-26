@@ -88,7 +88,7 @@ export const EducationForm: React.FC = () => {
         <h2 className="text-xl font-semibold text-gray-800">Education</h2>
         <button
           onClick={addEducation}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-md transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-[#DB4B2E] bg-[#FBEAE4] hover:bg-[#FBDDD3] rounded-md transition-colors"
         >
           <Plus size={16} />
           Add Education
@@ -128,7 +128,7 @@ export const EducationForm: React.FC = () => {
                             institution: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
                         placeholder="University Name"
                       />
                     </div>
@@ -142,7 +142,7 @@ export const EducationForm: React.FC = () => {
                         onChange={(e) =>
                           updateEducation(edu.id, { degree: e.target.value })
                         }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
                         placeholder="Bachelor's in Computer Science"
                       />
                     </div>
@@ -159,7 +159,7 @@ export const EducationForm: React.FC = () => {
                               startDate: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
                           placeholder="MM/YYYY"
                         />
                       </div>
@@ -174,7 +174,7 @@ export const EducationForm: React.FC = () => {
                               endDate: e.target.value,
                             })
                           }
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all"
                           placeholder="MM/YYYY"
                         />
                       </div>
@@ -192,7 +192,7 @@ export const EducationForm: React.FC = () => {
                           })
                         }
                         rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#DB4B2E]/45 focus:border-transparent transition-all resize-none"
                         placeholder="Details about your studies..."
                       />
                     </div>
